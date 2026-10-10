@@ -94,3 +94,10 @@ test("a WhatsApp link is built only from digits", () => {
   assert.equal(whatsappLink("923001234567"), "https://wa.me/923001234567");
   assert.throws(() => whatsappLink("+92 300 1234567"));
 });
+
+test("a WhatsApp link can carry a message, encoded for the URL", () => {
+  assert.equal(
+    whatsappLink("923001234567", "Order #1007: paid?"),
+    "https://wa.me/923001234567?text=Order%20%231007%3A%20paid%3F",
+  );
+});

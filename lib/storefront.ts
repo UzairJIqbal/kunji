@@ -91,8 +91,10 @@ export function groupByCategory<T extends Browsable>(
 
 // ───────────────────────────── WhatsApp ─────────────────────────────
 
-// wa.me wants the number in international form, digits only.
-export function whatsappLink(number: string): string {
+// wa.me wants the number in international form, digits only. The text, when
+// there is one, is typed into the chat ready to send.
+export function whatsappLink(number: string, text?: string): string {
   if (!/^\d+$/.test(number)) throw new Error("A WhatsApp number is digits only");
-  return `https://wa.me/${number}`;
+  const link = `https://wa.me/${number}`;
+  return text ? `${link}?text=${encodeURIComponent(text)}` : link;
 }

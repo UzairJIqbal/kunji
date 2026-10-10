@@ -76,8 +76,14 @@ begin
 
   foreach move in array moves loop
     if move = 'verifying' then
-      insert into public.payments (order_id, customer_id, method, transaction_id, sender_number)
-      values (new_order, customer, 'easypaisa', 'SEED-TX-' || new_number, '03000000000');
+      -- The method comes from the account. The receipt path names no file:
+      -- seed proof has no image, so its receipt link finds nothing.
+      insert into public.payments
+        (order_id, customer_id, payment_account_id, transaction_id, sender_number, receipt_path)
+      select new_order, customer, a.id, 'SEED-TX-' || new_number, '03000000000',
+             customer || '/' || gen_random_uuid() || '.png'
+      from public.payment_accounts a
+      where a.account_title = 'Test account (seed)';
     end if;
     if move = 'bought' then
       insert into public.supplier_purchases (order_id, supplier_order_number, amount_paid)

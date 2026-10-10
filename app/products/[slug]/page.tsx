@@ -88,25 +88,21 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
         <p className="mt-5 max-w-prose whitespace-pre-line leading-relaxed">{product.description}</p>
       )}
 
-      <fieldset disabled={product.sold_out} className="mt-6">
-        <legend className="text-base font-semibold">Plans</legend>
+      <section aria-labelledby="plans-heading" className="mt-6">
+        <h2 id="plans-heading" className="text-base font-semibold">
+          Plans
+        </h2>
         {product.sold_out && (
           <p className="mt-1 text-sm">
             Sold out for now. These plans can&apos;t be ordered until it&apos;s back in stock.
           </p>
         )}
-        <div className="mt-2 grid gap-2">
+        <ul className="mt-2 grid gap-2">
           {product.plans.map((plan) => (
-            <label
+            <li
               key={plan.id}
-              className="flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border bg-card px-3 py-2.5 has-checked:border-primary has-checked:ring-1 has-checked:ring-primary has-disabled:cursor-not-allowed has-disabled:opacity-60 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
+              className="flex min-h-16 items-center gap-3 rounded-lg border bg-card px-3 py-2.5"
             >
-              <input
-                type="radio"
-                name="plan"
-                value={plan.id}
-                className="size-5 shrink-0 accent-primary focus-visible:outline-none"
-              />
               <span className="min-w-0 flex-1">
                 <span className="block font-medium">{formatDays(plan.duration_days)}</span>
                 <span className="block text-sm text-muted-foreground">
@@ -116,10 +112,20 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
               <span className="text-lg font-semibold tabular-nums">
                 {formatRupees(plan.sell_price)}
               </span>
-            </label>
+              {/* No buy button on a sold-out product: absent, not greyed out. */}
+              {!product.sold_out && (
+                <Link
+                  href={`/checkout/${plan.id}`}
+                  aria-label={`Buy ${formatDays(plan.duration_days)} for ${formatRupees(plan.sell_price)}`}
+                  className="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  Buy
+                </Link>
+              )}
+            </li>
           ))}
-        </div>
-      </fieldset>
+        </ul>
+      </section>
     </article>
   );
 }

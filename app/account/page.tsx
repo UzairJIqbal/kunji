@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { listOrders } from "@/lib/data/orders";
 import { formatDays, formatPakistanTime, formatRupees } from "@/lib/format";
-import { customerStatusLabel, statusTone } from "@/lib/order-status";
+import { customerOrderStatus } from "@/lib/order-status";
 
 export const metadata: Metadata = { title: "Your account · Kunji" };
 
@@ -59,27 +59,35 @@ async function OrderList() {
     );
   }
 
+  // Read after the orders, so expiry is judged at this request's time.
+  const now = new Date();
+
   return (
     <ul className="mt-3 divide-y rounded-lg border">
-      {orders.map((order) => (
-        <li key={order.id} className="px-4 py-3 text-sm">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="font-medium">{order.product_name}</span>
-            <span className="shrink-0 tabular-nums">{formatRupees(order.price)}</span>
-          </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3">
-            <StatusBadge
-              tone={statusTone[order.status]}
-              label={customerStatusLabel[order.status]}
-            />
-            <span className="shrink-0 text-muted-foreground">{formatDays(order.duration_days)}</span>
-          </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
-            <span className="font-mono">#{order.number}</span>
-            <span className="shrink-0">{formatPakistanTime(order.created_at)}</span>
-          </div>
-        </li>
-      ))}
+      {orders.map((order) => {
+        const status = customerOrderStatus(order, now);
+        return (
+          <li key={order.id}>
+            <Link
+              href={`/account/orders/${order.number}`}
+              className="block px-4 py-3 text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-medium text-primary">{order.product_name}</span>
+                <span className="shrink-0 tabular-nums">{formatRupees(order.price)}</span>
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-3">
+                <StatusBadge tone={status.tone} label={status.label} />
+                <span className="shrink-0 text-muted-foreground">{formatDays(order.duration_days)}</span>
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+                <span className="font-mono">#{order.number}</span>
+                <span className="shrink-0">{formatPakistanTime(order.created_at)}</span>
+              </div>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }
