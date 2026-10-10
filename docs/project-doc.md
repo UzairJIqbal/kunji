@@ -143,7 +143,8 @@ pulls toward skipping the payment check because it's slow. Both are refused.
 
 ## Scope
 
-- Sign-in with Google, for customers and the seller alike.
+- Sign-in through Clerk (Google, and email codes if switched on), for customers
+  and the seller alike.
 - One admin role, given to specific accounts in the database. Everyone else is
   a customer.
 - A catalogue: products with plans (duration, supplier price, margin, warranty),
@@ -207,9 +208,10 @@ like an improvement. The reason matters more than the refusal.
   customers are already on WhatsApp.
 - **Points, referrals, coupons, wallets with stored balance.** Each one is a
   second ledger to keep true.
-- **Email and password sign-in.** Sending email reliably on a free plan without
-  a domain doesn't work well enough, and almost every customer has a Google
-  account.
+- **Passwords.** Customers sign in with Google or a one-time email code, both
+  handled by Clerk. Nobody has a Kunji password to forget or leak.
+- **Clerk organizations.** One store, one seller. Who is an admin is a row in
+  the database, not a Clerk organization or role.
 - **Guest checkout.** A credential has to land somewhere the customer can come
   back to.
 - **Multiple suppliers.** numastore is the supplier. The data keeps a supplier
@@ -228,15 +230,19 @@ business rules and not the tools.
   shadcn/ui.** The same as Flowlens. Server components keep credentials and
   admin data on the server by default.
 - **Supabase** for almost everything else: Postgres with row-level security
-  (the authorization layer, exactly as in Flowlens), Auth with Google sign-in,
-  Storage for receipts and product images, Realtime for live order status and
-  the admin queues, and Postgres functions for status changes.
-- **Supabase Auth instead of Clerk.** This is the one change from Flowlens, and
-  it's forced by free hosting. Clerk's production instance needs a domain you
-  own; on a free `vercel.app` address you'd be stuck on its development
-  instance, which shows a banner and isn't meant for real customers. Supabase
-  Auth works on any address, is free, and this store has no teams or
-  organizations, so nothing Clerk adds is needed.
+  (the authorization layer, exactly as in Flowlens), Storage for receipts and
+  product images, Realtime for live order status and the admin queues, and
+  Postgres functions for status changes.
+- **Clerk for sign-in**, the same as Flowlens. It handles Google sign-in and
+  email codes, including sending the emails, so there's no mail service to set
+  up. Supabase trusts Clerk's session token through Supabase's Clerk
+  integration, and the policies read the signed-in user's Clerk ID off that
+  token, exactly as Flowlens read the organization claim. One catch: Clerk's
+  production instance needs a domain you own. On a free `vercel.app` address
+  the live site runs on Clerk's development instance, which shows a small
+  banner and has a cap on users. That's accepted for testing and the first
+  customers; buying a domain later lifts both, and only configuration
+  changes.
 - **Node's built-in crypto** to encrypt credentials before they reach the
   database. No package needed.
 - **Zod** at every boundary where data comes from a browser.
@@ -463,7 +469,7 @@ Not "it looks right". Specifics:
   or the numastore order number.
 - A customer who submits proof after their order expired still lands in the
   verification queue.
-- The admin Google account has 2-step verification on. Whoever holds it can
-  read every vault.
+- Every admin account has 2-step verification on, in Clerk and on the Google
+  account behind it. Whoever holds one can read every vault.
 - Every product page states account type, duration, warranty and delivery
   time, and every badge on it is true at that moment.

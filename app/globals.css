@@ -1,8 +1,18 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Dark applies when forced, or when the device is dark and light isn't forced.
+   The theme control writes data-theme on <html>; no attribute means "system". */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
 }
 
 @theme inline {
@@ -10,17 +20,155 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--danger);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
 }
 
+/* Colour rules (project doc): surfaces, borders and text are greyscale. Blue
+   (primary, ring) marks only what can be tapped. Green, amber and red are
+   reserved for status: paid/delivered, waiting on someone, rejected/refunded. */
+:root {
+  --radius: 0.5rem;
+
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.2 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0 0);
+  --muted: oklch(0.955 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --secondary: oklch(0.955 0 0);
+  --secondary-foreground: oklch(0.2 0 0);
+  --accent: oklch(0.955 0 0);
+  --accent-foreground: oklch(0.2 0 0);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.86 0 0);
+
+  --primary: oklch(0.5 0.19 258);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.5 0.19 258);
+
+  --success: oklch(0.52 0.13 150);
+  --warning: oklch(0.6 0.13 70);
+  --danger: oklch(0.54 0.2 27);
+}
+
+/* A palette of its own, not the light one inverted: surfaces step up in
+   lightness as they come forward, and the accent and status hues are lifted
+   so they hold contrast on a dark ground. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --background: oklch(0.16 0 0);
+    --foreground: oklch(0.93 0 0);
+    --card: oklch(0.2 0 0);
+    --card-foreground: oklch(0.93 0 0);
+    --popover: oklch(0.22 0 0);
+    --popover-foreground: oklch(0.93 0 0);
+    --muted: oklch(0.24 0 0);
+    --muted-foreground: oklch(0.68 0 0);
+    --secondary: oklch(0.24 0 0);
+    --secondary-foreground: oklch(0.93 0 0);
+    --accent: oklch(0.24 0 0);
+    --accent-foreground: oklch(0.93 0 0);
+    --border: oklch(0.28 0 0);
+    --input: oklch(0.34 0 0);
+
+    --primary: oklch(0.7 0.14 255);
+    --primary-foreground: oklch(0.16 0 0);
+    --ring: oklch(0.7 0.14 255);
+
+    --success: oklch(0.74 0.14 150);
+    --warning: oklch(0.8 0.13 80);
+    --danger: oklch(0.7 0.17 25);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root[data-theme="dark"] {
+  --background: oklch(0.16 0 0);
+  --foreground: oklch(0.93 0 0);
+  --card: oklch(0.2 0 0);
+  --card-foreground: oklch(0.93 0 0);
+  --popover: oklch(0.22 0 0);
+  --popover-foreground: oklch(0.93 0 0);
+  --muted: oklch(0.24 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+  --secondary: oklch(0.24 0 0);
+  --secondary-foreground: oklch(0.93 0 0);
+  --accent: oklch(0.24 0 0);
+  --accent-foreground: oklch(0.93 0 0);
+  --border: oklch(0.28 0 0);
+  --input: oklch(0.34 0 0);
+
+  --primary: oklch(0.7 0.14 255);
+  --primary-foreground: oklch(0.16 0 0);
+  --ring: oklch(0.7 0.14 255);
+
+  --success: oklch(0.74 0.14 150);
+  --warning: oklch(0.8 0.13 80);
+  --danger: oklch(0.7 0.17 25);
+}
+
+:root {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Clerk's sign-in components read these, so they follow the app's theme. */
+:root {
+  --clerk-color-primary: var(--primary);
+  --clerk-color-primary-foreground: var(--primary-foreground);
+  --clerk-color-background: var(--card);
+  --clerk-color-foreground: var(--foreground);
+  --clerk-color-muted-foreground: var(--muted-foreground);
+  --clerk-color-input: var(--background);
+  --clerk-color-input-foreground: var(--foreground);
+  --clerk-color-neutral: var(--foreground);
+  --clerk-color-danger: var(--danger);
+  --clerk-color-success: var(--success);
+  --clerk-color-warning: var(--warning);
+  --clerk-color-border: var(--border);
+  --clerk-color-ring: var(--ring);
+  --clerk-font-family: var(--font-geist-sans);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

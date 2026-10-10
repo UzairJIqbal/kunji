@@ -21,8 +21,9 @@ Every phase is built and has passed its check locally. This phase adds nothing t
 ### Production
 
 - The same Supabase project as development is fine on the free plan, as long as test orders are cleared out before real customers arrive. Every migration is applied from the repository, never by hand in the dashboard.
-- Google sign-in's allowed redirect addresses include the production address.
-- 2-step verification is on for every Google account in the admins table. Whoever holds one of them can read every vault.
+- The Clerk application's allowed addresses include the production address, and the Supabase Clerk integration points at the same Clerk application.
+- Clerk's production instance needs a domain you own, so on the free `vercel.app` address the live site uses Clerk's development instance. The README says so, and the small development banner is accepted.
+- 2-step verification is on for every account in the admins table, in Clerk and on the Google account behind it. Whoever holds one of them can read every vault.
 - The credential encryption key in production is its own key, generated fresh, with a copy saved in a password manager. Losing it loses every vault.
 - Every environment variable set in Vercel for Production and Preview.
 
@@ -44,7 +45,7 @@ Every phase is built and has passed its check locally. This phase adds nothing t
 
 - **Nothing about how Kunji works changes in this phase.** No new features. A deploy that also changes behaviour makes every production bug ambiguous.
 - **Vercel's free Hobby plan is for non-commercial use.** It's fine for testing and showing the project. Before the first real customer pays, the store moves to Vercel Pro or to a host whose free plan allows commercial use, such as Netlify. The README says this plainly. Nothing in the code depends on a Vercel-only feature, so the move is configuration, not a rewrite.
-- **Everything runs on free plans**: Vercel Hobby (while testing), Supabase Free, Google sign-in, Telegram. No paid add-on, no paid domain. When a free limit is hit, the app says so plainly.
+- **Everything runs on free plans**: Vercel Hobby (while testing), Supabase Free, Clerk Free, Telegram. No paid add-on, no paid domain. When a free limit is hit, the app says so plainly.
 - **Supabase's free plan pauses a project after a week with no activity.** The README says so. A live store with customers won't hit it; a demo left alone will.
 - Row-level security is checked in production, not assumed from development.
 - Environment configuration still fails loudly. A production deploy with a missing variable fails the build, not the first customer's checkout.
@@ -55,7 +56,7 @@ Every phase is built and has passed its check locally. This phase adds nothing t
 1. Clone the repository fresh into an empty folder, follow only the README, and the app builds and its tests pass.
 2. A secret scan of the full git history finds nothing live.
 3. Open the production link on a phone in a private window. The catalogue loads without signing in, every card shows its honest facts, and nothing on the page names the supplier.
-4. Sign in with Google on production as a second account, buy the cheapest product with a real wallet payment to yourself, approve it from the queue on your phone, buy it on numastore from the buy list, deliver it, and find it in the customer's vault.
+4. Sign in on production as a second account with each enabled method, buy the cheapest product with a real wallet payment to yourself, approve it from the queue on your phone, buy it on numastore from the buy list, deliver it, and find it in the customer's vault.
 5. Signed in as a second account, the first account's orders and vault don't come back from the query.
 6. Run the row-level security check against production. Every table passes.
 7. Open a pull request with a trivial change. CI runs and passes, and a preview link appears.
@@ -66,4 +67,4 @@ Every phase is built and has passed its check locally. This phase adds nothing t
 
 ## Not in this phase
 
-New features of any kind. A custom domain, paid plans, email sign-in. Automatic payment verification. Automatic buying on numastore. Moving hosts, which happens when real sales start, not as part of shipping the demo.
+New features of any kind. A custom domain, paid plans, Clerk's production instance. Automatic payment verification. Automatic buying on numastore. Moving hosts, which happens when real sales start, not as part of shipping the demo.
