@@ -105,9 +105,11 @@ export type Database = {
       }
       orders: {
         Row: {
+          activation_email: string | null
           created_at: string
           customer_id: string
           duration_days: number
+          expires_at: string
           id: string
           number: number
           plan_id: string
@@ -117,9 +119,11 @@ export type Database = {
           warranty_days: number
         }
         Insert: {
+          activation_email?: string | null
           created_at?: string
           customer_id: string
           duration_days: number
+          expires_at: string
           id?: string
           number?: never
           plan_id: string
@@ -129,9 +133,11 @@ export type Database = {
           warranty_days: number
         }
         Update: {
+          activation_email?: string | null
           created_at?: string
           customer_id?: string
           duration_days?: number
+          expires_at?: string
           id?: string
           number?: never
           plan_id?: string
@@ -194,7 +200,8 @@ export type Database = {
           id: string
           method: Database["public"]["Enums"]["payment_method"]
           order_id: string
-          receipt_path: string | null
+          payment_account_id: string
+          receipt_path: string
           sender_number: string
           transaction_id: string
         }
@@ -204,7 +211,8 @@ export type Database = {
           id?: string
           method: Database["public"]["Enums"]["payment_method"]
           order_id: string
-          receipt_path?: string | null
+          payment_account_id: string
+          receipt_path: string
           sender_number: string
           transaction_id: string
         }
@@ -214,7 +222,8 @@ export type Database = {
           id?: string
           method?: Database["public"]["Enums"]["payment_method"]
           order_id?: string
-          receipt_path?: string | null
+          payment_account_id?: string
+          receipt_path?: string
           sender_number?: string
           transaction_id?: string
         }
@@ -225,6 +234,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "payments_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "payment_accounts"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -401,6 +417,24 @@ export type Database = {
           order_count: number
           order_status: Database["public"]["Enums"]["order_status"]
         }[]
+      }
+      place_order: {
+        Args: {
+          p_activation_email?: string
+          p_plan_id: string
+          p_whatsapp?: string
+        }
+        Returns: number
+      }
+      submit_payment_proof: {
+        Args: {
+          p_order_id: string
+          p_payment_account_id: string
+          p_receipt_path: string
+          p_sender_number: string
+          p_transaction_id: string
+        }
+        Returns: undefined
       }
       update_plan: {
         Args: {

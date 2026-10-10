@@ -42,3 +42,37 @@ export const statusTone: Record<OrderStatus, StatusTone> = {
   refunded: "plain",
   replaced: "success",
 };
+
+// ───────────────────────────── Expiry ─────────────────────────────
+
+// Expiry isn't a status the database moves an order into: an unpaid order is
+// expired once its time has passed, worked out whenever it's read. It still
+// takes proof, because someone may have paid at the last minute.
+export function isExpired(
+  order: { status: OrderStatus; expires_at: string },
+  now: Date,
+): boolean {
+  return order.status === "awaiting_payment" && new Date(order.expires_at) <= now;
+}
+
+export function customerOrderStatus(
+  order: { status: OrderStatus; expires_at: string },
+  now: Date,
+): { label: string; tone: StatusTone } {
+  if (isExpired(order, now)) return { label: "Expired", tone: "plain" };
+  return { label: customerStatusLabel[order.status], tone: statusTone[order.status] };
+}
+
+// What each recorded move means to the customer, for their order's timeline.
+// The seller buying the item is left out, as with the status: to the customer
+// it's one step, "preparing".
+export const customerEventLabel: Record<OrderStatus, string | null> = {
+  awaiting_payment: "Order placed",
+  verifying: "Payment proof submitted",
+  paid: "Payment confirmed",
+  bought: null,
+  delivered: "Delivered to your vault",
+  rejected: "Payment rejected",
+  refunded: "Refunded",
+  replaced: "Replacement delivered",
+};

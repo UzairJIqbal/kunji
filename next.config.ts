@@ -6,9 +6,9 @@ assertServerEnv();
 const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
-    // A product image may be up to 1 MB (the bucket's limit) and arrives with
-    // the rest of the form, so the default 1 MB body would refuse it.
-    serverActions: { bodySizeLimit: "2mb" },
+    // A payment receipt may be up to 5 MB (its bucket's limit) and arrives
+    // with the rest of the form, so the default 1 MB body would refuse it.
+    serverActions: { bodySizeLimit: "6mb" },
   },
   // Product images come only from this project's public bucket.
   images: {
