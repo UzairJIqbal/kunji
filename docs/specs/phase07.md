@@ -15,7 +15,7 @@ The seller can approve payments, which leaves orders at *paid*. Nothing tells th
 - **"Bought".** The seller enters the numastore order number and what they actually paid, and the order moves to *bought*. The amount starts filled in with the plan's listed supplier price, and the seller corrects it if numastore charged something different.
 - **"numastore can't supply it".** One tap marks the product sold out, and moves the order to *refunded* once the seller records how the money was sent back (method and reference). Until then it sits in a "refunds to send" list.
 - **What the customer sees.** *Paid* and *bought* both show as "Preparing your order". A refund shows as *refunded*, with the amount and method, live, and a line saying the item is out of stock.
-- **The Telegram ping on approval** now says "bought needed" with the order number, so the next step is on the seller's phone the moment the payment is approved.
+- **The ping on approval** now says "bought needed" with the order number, so the next step is on the seller's phone the moment the payment is approved.
 - An order waiting at *paid* for more than 30 minutes is marked in amber on the buy list.
 
 ## Constraints
@@ -29,7 +29,7 @@ The seller can approve payments, which leaves orders at *paid*. Nothing tells th
 
 ## Acceptance check
 
-1. Approve a payment. The order appears on the buy list on your phone without a refresh, and a Telegram ping says it needs buying.
+1. Approve a payment. The order appears on the buy list on your phone without a refresh, and a ping says it needs buying.
 2. Tap the numastore link: the right item opens. Copy the activation email: it pastes correctly into numastore's checkout.
 3. Mark it bought with a numastore order number and a price Rs 50 higher than listed. The order shows *bought*, the difference is shown, and the plan's supplier price hasn't changed on its own.
 4. On a second order, try the same numastore order number. Refused.

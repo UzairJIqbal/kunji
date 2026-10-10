@@ -45,7 +45,7 @@ Every phase is built and has passed its check locally. This phase adds nothing t
 
 - **Nothing about how Kunji works changes in this phase.** No new features. A deploy that also changes behaviour makes every production bug ambiguous.
 - **Vercel's free Hobby plan is for non-commercial use.** It's fine for testing and showing the project. Before the first real customer pays, the store moves to Vercel Pro or to a host whose free plan allows commercial use, such as Netlify. The README says this plainly. Nothing in the code depends on a Vercel-only feature, so the move is configuration, not a rewrite.
-- **Everything runs on free plans**: Vercel Hobby (while testing), Supabase Free, Clerk Free, Telegram. No paid add-on, no paid domain. When a free limit is hit, the app says so plainly.
+- **Everything runs on free plans**: Vercel Hobby (while testing), Supabase Free, Clerk Free, ntfy. No paid add-on, no paid domain. When a free limit is hit, the app says so plainly.
 - **Supabase's free plan pauses a project after a week with no activity.** The README says so. A live store with customers won't hit it; a demo left alone will.
 - Row-level security is checked in production, not assumed from development.
 - Environment configuration still fails loudly. A production deploy with a missing variable fails the build, not the first customer's checkout.

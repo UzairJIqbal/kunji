@@ -23,7 +23,7 @@ export async function listOrders() {
 const EVENT_LIMIT = 50;
 const orderNumberPattern = /^[1-9]\d{0,11}$/;
 
-// One order with its timeline and its proof, if the policy lets this viewer
+// One order with its timeline, its proof and what the seller decided, if the policy lets this viewer
 // see it. Someone else's order is simply not there: null, the same as an
 // order number that never existed.
 export async function getOrder(number: string) {
@@ -35,7 +35,9 @@ export async function getOrder(number: string) {
       `id, number, status, price, product_name, duration_days, warranty_days,
        activation_email, expires_at, created_at,
        order_events (id, to_status, created_at),
-       payments (method, transaction_id, sender_number, created_at)`,
+       payments (method, transaction_id, sender_number, created_at),
+       payment_rejections (reason),
+       refunds (amount, method, reference, sent_to, created_at)`,
     )
     .eq("number", Number(number))
     // Moves made in one transaction share a time; the ID keeps their order.
@@ -46,8 +48,15 @@ export async function getOrder(number: string) {
     .maybeSingle();
   if (error) throw new Error(`Couldn't load the order: ${error.message}`);
   if (!data) return null;
-  const { payments, ...order } = data;
-  return { ...order, payment: payments[0] ?? null };
+  // One rejection and one refund at most, each keyed by the order, but
+  // PostgREST hands them back as lists.
+  const { payments, payment_rejections, refunds, ...order } = data;
+  return {
+    ...order,
+    payment: payments[0] ?? null,
+    rejection: payment_rejections[0] ?? null,
+    refund: refunds[0] ?? null,
+  };
 }
 
 // The receipt's path, read under the payments policy. Only the order's own
