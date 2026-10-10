@@ -246,8 +246,15 @@ business rules and not the tools.
 - **Node's built-in crypto** to encrypt credentials before they reach the
   database. No package needed.
 - **Zod** at every boundary where data comes from a browser.
-- **A Telegram bot** to ping the seller's phone. Free, one HTTP call, no SDK.
-- **pnpm, GitHub Actions CI, CodeRabbit.** Same as Flowlens.
+- **ntfy** (ntfy.sh) to ping the seller's phone. Free, no account, one HTTP
+  call, no SDK. Telegram was the first choice, but it's often blocked in
+  Pakistan. The topic name is a long random secret kept in the environment,
+  and a ping never carries anything private: only an order number, amount and
+  a link to the admin screen, which needs the seller's sign-in anyway.
+- **pnpm, GitHub Actions CI, CodeRabbit.** A small one-person store doesn't
+  need a review on every phase, so phases go straight to main. CodeRabbit
+  reviews only the two phases where a bug costs money or leaks a login:
+  Phase 6 (approving payments) and Phase 8 (the vault).
 - **Vercel Hobby to build and test on.** Read the hosting note below before the
   first real sale.
 
@@ -349,7 +356,7 @@ them.
 page and the seller's queues both subscribe to changes. Nothing reads the
 database on a loop.
 
-**Pings to the seller never block the order.** If the Telegram message fails,
+**Pings to the seller never block the order.** If the ntfy ping fails,
 the order still goes through and the failure is logged. The queues on the admin
 screen are the source of truth; the ping is a convenience.
 
@@ -422,9 +429,9 @@ What stays manual even then: buying on numastore. There's no safe way to
 automate it without an API from them, and a bot on the seller's account risks
 the whole business. If numastore ever offers a reseller API, that changes.
 
-The Telegram ping stays as the notification. It's free, instant and works with
+The ntfy ping stays as the notification. It's free, instant and works with
 the phone locked. Browser push notifications from Kunji itself are possible
-later if Telegram ever gets in the way.
+later if ntfy ever gets in the way.
 
 ## Where this is likely to go wrong
 

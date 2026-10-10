@@ -193,6 +193,35 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_rejections: {
+        Row: {
+          created_at: string
+          customer_id: string
+          order_id: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          order_id: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          order_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_rejections_order_id_customer_id_fkey"
+            columns: ["order_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id", "customer_id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           created_at: string
@@ -359,6 +388,65 @@ export type Database = {
         }
         Relationships: []
       }
+      refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          order_id: string
+          reference: string
+          refunded_by: string | null
+          sent_to: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          order_id: string
+          reference: string
+          refunded_by?: string | null
+          sent_to: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          order_id?: string
+          reference?: string
+          refunded_by?: string | null
+          sent_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_order_id_customer_id_fkey"
+            columns: ["order_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id", "customer_id"]
+          },
+        ]
+      }
+      store_settings: {
+        Row: {
+          away: boolean
+          back_at: string | null
+          id: boolean
+        }
+        Insert: {
+          away?: boolean
+          back_at?: string | null
+          id?: boolean
+        }
+        Update: {
+          away?: boolean
+          back_at?: string | null
+          id?: boolean
+        }
+        Relationships: []
+      }
       supplier_purchases: {
         Row: {
           amount_paid: number
@@ -399,6 +487,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_payment: { Args: { p_order_id: string }; Returns: undefined }
       create_plan: {
         Args: {
           p_duration_days: number
@@ -425,6 +514,19 @@ export type Database = {
           p_whatsapp?: string
         }
         Returns: number
+      }
+      refund_rejected_order: {
+        Args: {
+          p_amount: number
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_order_id: string
+          p_reference: string
+        }
+        Returns: undefined
+      }
+      reject_payment: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: undefined
       }
       submit_payment_proof: {
         Args: {

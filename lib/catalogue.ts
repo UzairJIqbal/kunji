@@ -31,7 +31,7 @@ export const MAX_IMAGE_BYTES = 1024 * 1024; // the bucket's own limit
 // browser left out is missing altogether. Each message names its field, so a
 // refusal says what to fix without the seller having to find a red outline.
 
-function requiredText(label: string, max: number) {
+export function requiredText(label: string, max: number) {
   return z
     .string({ error: `${label} is required` })
     .trim()
@@ -49,7 +49,7 @@ function optionalText(label: string, max: number) {
 
 // Whole numbers only, typed as digits: "1e3", "12.5" and "-4" are refused
 // rather than coerced into something the seller didn't type.
-function wholeNumber(label: string, min: number, max: number) {
+export function wholeNumber(label: string, min: number, max: number) {
   return z
     .string({ error: `${label} is required` })
     .trim()

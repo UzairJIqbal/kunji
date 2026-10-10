@@ -14,7 +14,7 @@ rules themselves.
 Next.js 16 App Router, React 19, TypeScript strict. Tailwind v4 and shadcn/ui.
 Clerk for sign-in. Supabase for Postgres, row-level security, Storage and
 Realtime, trusting Clerk's session token through Supabase's Clerk integration. Node's built-in crypto for encrypting credentials. Zod at every
-boundary. A Telegram bot for pings to the seller. pnpm.
+boundary. An ntfy push for pings to the seller. pnpm.
 
 Next.js 16 changed a lot. If you're not certain about an API, read the docs
 inside the installed package rather than going from memory. Same for
@@ -37,6 +37,12 @@ asks and stop.
 **Dropped into a fresh context and don't know where we are?** Look at which
 files exist in `docs/specs/`, then the git log. The last commit is the last
 phase that passed. Tell me what you've worked out before building on it.
+
+**Finishing a phase.** After I've run the acceptance check, commit the phase
+as one commit and push it straight to main. Two exceptions: Phase 6 (approving
+payments) and Phase 8 (the vault) go on their own branch as a pull request,
+and I merge them after CodeRabbit's review is clean. Money and credentials get
+a second pair of eyes.
 
 **The acceptance check is mine to run, not yours.** It's a list of things I do
 by hand in a browser or on my phone. Don't automate it, don't install a test

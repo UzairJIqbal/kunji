@@ -55,3 +55,15 @@ export function formatPakistanDate(timestamp: string | Date): string {
 export function formatDaysAgo(days: number): string {
   return days === 0 ? "today" : `${formatDays(days)} ago`;
 }
+
+// A time of day as the database keeps it ("10:00:00") or a time input sends it
+// ("10:00"), said the way people say it: "10am", "10:30am", "12pm" for noon.
+export function formatClockTime(time: string): string {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d(?:\.\d+)?)?$/.exec(time);
+  if (!match) throw new Error(`Not a time of day: ${time}`);
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const suffix = hours < 12 ? "am" : "pm";
+  const hour = hours % 12 === 0 ? 12 : hours % 12;
+  return minutes === "00" ? `${hour}${suffix}` : `${hour}:${minutes}${suffix}`;
+}

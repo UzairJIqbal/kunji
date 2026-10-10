@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { LiveOrders } from "@/components/live-orders";
 import { StatusBadge } from "@/components/status-badge";
 import { textLinkClass } from "@/components/store/fields";
 import { PaymentForm } from "@/components/store/payment-form";
@@ -58,6 +59,8 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
 
   return (
     <>
+      {/* The seller's decision shows up here as it's made. */}
+      <LiveOrders orderId={order.id} />
       <Link href="/account#orders" className={`${textLinkClass} text-sm`}>
         Your orders
       </Link>
@@ -83,6 +86,46 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
           <StatusBadge tone={status.tone} label={status.label} />
         </div>
       </header>
+
+      {order.status === "rejected" && order.rejection && (
+        <section aria-labelledby="rejected-heading" className="mt-6 rounded-lg border border-danger p-4 text-sm">
+          <h2 id="rejected-heading" className="text-base font-semibold text-danger">
+            We couldn&apos;t confirm your payment
+          </h2>
+          <p className="mt-1">Reason: {order.rejection.reason}</p>
+          <p className="mt-2">
+            If you did pay,{" "}
+            <a href={help} className={textLinkClass}>
+              message us on WhatsApp
+            </a>{" "}
+            and we&apos;ll sort it out.
+          </p>
+        </section>
+      )}
+
+      {order.refund && (
+        <section aria-labelledby="refund-heading" className="mt-6 rounded-lg border bg-card p-4">
+          <h2 id="refund-heading" className="text-base font-semibold">
+            Refunded {formatRupees(order.refund.amount)}
+          </h2>
+          <dl className="mt-2 grid gap-2 text-sm">
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Sent to</dt>
+              <dd className="text-right tabular-nums">
+                {order.refund.sent_to}, {paymentMethodLabel[order.refund.method]}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Reference</dt>
+              <dd className="min-w-0 break-all text-right font-mono">{order.refund.reference}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Sent</dt>
+              <dd className="text-right">{formatPakistanTime(order.refund.created_at)}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       {awaiting && (
         <section aria-labelledby="pay-heading" className="mt-6">

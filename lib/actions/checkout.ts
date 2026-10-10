@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { type FormState, formValues, idSchema, refusal } from "@/lib/catalogue";
 import {
   MAX_RECEIPT_BYTES,
@@ -13,7 +14,10 @@ import {
   proofSchema,
 } from "@/lib/checkout";
 import { detectImageType, imageContentType } from "@/lib/image-type";
+import { ntfyEnv } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { pingSeller } from "@/lib/ntfy";
+import { newProofPing } from "@/lib/verification";
 
 // Every write runs as the signed-in customer, and the policies and triggers
 // decide: the price comes from the plan in the database, an order can only be
@@ -188,6 +192,22 @@ export async function submitProof(
     await supabase.storage.from(RECEIPT_BUCKET).remove([path]);
     return proofFailure(error, prev);
   }
+
+  // The proof is saved; from here nothing can take that back. The seller's ping
+  // goes once the customer has their answer, and only says what to look for.
+  const method = paidInto.method;
+  after(async () => {
+    const { data: placed, error: readError } = await supabase
+      .from("orders")
+      .select("number, price")
+      .eq("id", order.data)
+      .single();
+    if (readError) {
+      console.error(`Ping skipped: couldn't read the order (${readError.code ?? "no code"})`);
+      return;
+    }
+    await pingSeller(newProofPing({ ...placed, method }, ntfyEnv().siteUrl));
+  });
 
   refresh();
   return { ok: true, message: "Proof sent.", fieldErrors: {}, version: prev.version + 1 };

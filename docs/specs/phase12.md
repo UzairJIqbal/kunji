@@ -18,7 +18,7 @@ Every payment is approved by hand from the verification queue. Easypaisa and Jaz
 - **Matching.** When an SMS is read and exactly one *verifying* order has the same transaction ID, the same amount and the same method, the order moves to *paid*. It works in either order: an SMS that arrives before the customer submits proof waits, and is matched when the proof comes in.
 - **The order event says how it was approved**: "matched to wallet SMS", with a link to the stored message, so the seller can always see why.
 - **An "unmatched payments" list** in the admin area: SMS that arrived and matched nothing. This is money that came in without an order, or with a typo in the transaction ID.
-- **The Telegram ping on an automatic approval** says "paid automatically, needs buying", so the buy step starts straight away.
+- **The ping on an automatic approval** says "paid automatically, needs buying", so the buy step starts straight away.
 - **A switch to turn matching off.** Everything falls back to the v1 queue.
 
 ## Constraints
