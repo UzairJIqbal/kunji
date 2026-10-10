@@ -85,6 +85,7 @@ export async function refundRejectedOrder(
       amount: ["More than the order's price"],
     });
   }
+  if (error?.code === "KJ007") return failed("Not saved: this order has no payment to refund to.", prev);
   if (error) return decisionFailure(error, prev);
 
   refresh();
