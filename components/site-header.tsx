@@ -1,7 +1,12 @@
 import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ThemeControl } from "@/components/theme-control";
+import { viewerSeesAdminRows } from "@/lib/data/admin";
+
+const navLinkClass =
+  "inline-flex h-9 items-center rounded-md px-2.5 text-sm font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 // One line at 360px: name on the left, everything else packed right.
 export function SiteHeader() {
@@ -15,10 +20,10 @@ export function SiteHeader() {
           Kunji
         </Link>
         <ThemeControl />
-        <Link
-          href="/account"
-          className="inline-flex h-9 items-center rounded-md px-2.5 text-sm font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <Suspense fallback={null}>
+          <AdminLink />
+        </Suspense>
+        <Link href="/account" className={navLinkClass}>
           Account
         </Link>
         {/* Auth state is per request, so it streams in; the rest of the header is static. */}
@@ -41,5 +46,18 @@ export function SiteHeader() {
         </Suspense>
       </div>
     </header>
+  );
+}
+
+// Shown when the admins policy lets this viewer see admin rows, which only an
+// admin can. Signed out there's no one to ask about, and the anon role can't
+// read the admins table at all, so the query is skipped.
+async function AdminLink() {
+  const { userId } = await auth();
+  if (!userId || !(await viewerSeesAdminRows())) return null;
+  return (
+    <Link href="/admin/products" className={navLinkClass}>
+      Admin
+    </Link>
   );
 }

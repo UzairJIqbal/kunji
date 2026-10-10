@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/store/site-footer";
 import { SupabaseConsole } from "@/components/supabase-console";
 import { themeScript } from "@/components/theme-control";
 import "./globals.css";
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ClerkProvider>
           <SiteHeader />
           <div className="flex flex-1 flex-col">{children}</div>
+          <SiteFooter />
           {process.env.NODE_ENV === "development" && <SupabaseConsole />}
         </ClerkProvider>
       </body>
