@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { LiveOrders } from "@/components/live-orders";
+import { LiveTickets } from "@/components/live-tickets";
 import { StatusBadge } from "@/components/status-badge";
-import { textLinkClass } from "@/components/store/fields";
+import { primaryButtonClass, textLinkClass } from "@/components/store/fields";
 import { RevealCredential } from "@/components/vault/reveal-credential";
 import { revealCredential } from "@/lib/actions/vault";
+import { vaultTicketState } from "@/lib/data/tickets";
 import { getVaultEntry } from "@/lib/data/vault";
 import { whatsappNumber } from "@/lib/env";
 import { formatDays, formatPakistanDate, formatPakistanTime, formatWarranty } from "@/lib/format";
 import { whatsappLink } from "@/lib/storefront";
+import { warrantyRunning } from "@/lib/warranty";
 import { credentialKindLabel, daysLeft, vaultDates, vaultStanding, vaultStandingBadge } from "@/lib/vault";
 
 export async function generateMetadata({ params }: PageProps<"/account/vault/[number]">): Promise<Metadata> {
@@ -36,9 +40,18 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
   // Read after the entry, so it's this request's time, not the build's.
   const now = new Date();
   const { expiresAt, warrantyEndsAt } = vaultDates(entry.delivered_at, order.duration_days, order.warranty_days);
-  const standing = vaultStanding(expiresAt, now);
+  const standing = vaultStanding(expiresAt, now, order.status);
+  // The money went back, so the entry stays only as a record. The database
+  // refuses the customer's reveal too; the page doesn't offer one.
+  const refunded = standing === "refunded";
   const badge = vaultStandingBadge[standing];
   const help = whatsappLink(whatsappNumber(), `Hi, about my Kunji order #${order.number}`);
+  const reportable =
+    (order.status === "delivered" || order.status === "replaced") &&
+    order.warranty_days > 0 &&
+    warrantyRunning(warrantyEndsAt, now);
+  const tickets = await vaultTicketState(entry.order_id);
+  const reported = reportable && tickets.open;
 
   const details = [
     { term: "Plan", detail: formatDays(order.duration_days) },
@@ -61,6 +74,10 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
 
   return (
     <>
+      {/* A replace or refund shows without a reload. Heard through the order
+          and its tickets, so the vault's ciphertext never goes over a socket. */}
+      <LiveOrders orderId={entry.order_id} />
+      <LiveTickets orderId={entry.order_id} />
       <Link href="/account#vault" className={`${textLinkClass} text-sm`}>
         Your vault
       </Link>
@@ -77,7 +94,7 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
 
       {/* Above the credential, every time: what voids the warranty, in the
           seller's words. No words, no box; nothing is made up to fill it. */}
-      {entry.warranty_warning && (
+      {!refunded && entry.warranty_warning && (
         <section aria-labelledby="warning-heading" className="mt-6 rounded-lg border-2 border-foreground p-4">
           <h2 id="warning-heading" className="text-base font-semibold">
             What voids your warranty
@@ -90,10 +107,18 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
         <h2 id="credential-heading" className="mb-3 text-base font-semibold">
           {credentialKindLabel[entry.kind]}
         </h2>
-        <RevealCredential reveal={revealCredential.bind(null, entry.order_id)} />
+        {refunded ? (
+          <p className="text-sm text-muted-foreground">
+            This order was refunded, so this login is no longer valid and isn&apos;t shown.
+          </p>
+        ) : (
+          // Keyed on the replace count: a login shown before a replace is
+          // dropped, and the next tap fetches the new one.
+          <RevealCredential key={tickets.replacements} reveal={revealCredential.bind(null, entry.order_id)} />
+        )}
       </section>
 
-      {entry.setup_instructions && (
+      {!refunded && entry.setup_instructions && (
         <section aria-labelledby="setup-heading" className="mt-6">
           <h2 id="setup-heading" className="text-base font-semibold">
             Setting it up
@@ -116,12 +141,38 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
         </dl>
       </section>
 
-      <p className="mt-8 text-sm">
-        Not working?{" "}
-        <a href={help} className={textLinkClass}>
-          Tell us on WhatsApp
-        </a>
-      </p>
+      {/* The report and its thread live on the order; this only points there. */}
+      <section aria-label="Problem with it?" className="mt-8">
+        {refunded ? (
+          <p className="text-sm">
+            Refunded.{" "}
+            <Link href={`/account/orders/${order.number}`} className={textLinkClass}>
+              See the refund on your order
+            </Link>
+          </p>
+        ) : reported ? (
+          <p className="text-sm">
+            You&apos;ve reported a problem.{" "}
+            <Link href={`/account/orders/${order.number}#warranty-heading`} className={textLinkClass}>
+              See where it is
+            </Link>
+          </p>
+        ) : reportable ? (
+          <Link href={`/account/orders/${order.number}/report`} className={primaryButtonClass}>
+            Report a problem
+          </Link>
+        ) : (
+          <p className="text-sm">
+            {order.warranty_days === 0
+              ? "This plan has no warranty."
+              : `Warranty ended ${formatPakistanDate(warrantyEndsAt)}.`}{" "}
+            Not working?{" "}
+            <a href={help} className={textLinkClass}>
+              Tell us on WhatsApp
+            </a>
+          </p>
+        )}
+      </section>
     </>
   );
 }

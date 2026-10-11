@@ -1,5 +1,6 @@
 // Fails if any table outside Supabase's own schemas has row-level security
-// off, or if a vault entry can be inserted without going through delivery.
+// off, if a vault entry can be inserted without going through delivery, or if
+// a customer can open a ticket on an order whose warranty has ended.
 // Runs from the terminal now and in CI later, so it talks to Postgres
 // directly rather than through the MCP. Nothing it does is kept: the insert
 // attempt runs in a transaction that is always rolled back.
@@ -90,13 +91,71 @@ try {
     throw new RolledBack();
   });
 } catch (error) {
+  if (!(error instanceof RolledBack)) {
+    await sql.end();
+    throw error;
+  }
+}
+
+if (outcome !== "ok") {
+  await sql.end();
+  console.error(`\nFAIL: direct vault insert on a paid order: ${outcome}`);
+  process.exit(1);
+}
+console.log("PASS: a direct vault insert on a paid order is refused; only delivery makes entries.");
+
+// ───────────────────────────── Warranty tickets ─────────────────────────────
+
+// The warranty end is the database's to check. A delivered order's delivery
+// is moved back past its warranty, inside the rolled-back transaction, and its
+// own customer, signed in, inserts a ticket straight into the table. Anything
+// but the warranty refusal (KJ009) fails, including there being no delivered
+// order with a warranty to try it on.
+let ticketOutcome = "did not run";
+try {
+  await sql.begin(async (tx) => {
+    const [order] = await tx<{ id: string; customer_id: string }[]>`
+      select o.id, o.customer_id
+      from public.orders o
+      join public.vault_entries v on v.order_id = o.id
+      where o.status in ('delivered', 'replaced') and o.warranty_days > 0
+      limit 1
+    `;
+    if (!order) {
+      ticketOutcome = "could not run: needs a delivered order with a warranty";
+      throw new RolledBack();
+    }
+    await tx`
+      update public.vault_entries v
+      set delivered_at = now() - make_interval(days => o.warranty_days) - interval '1 minute'
+      from public.orders o
+      where o.id = v.order_id and v.order_id = ${order.id}
+    `;
+
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: order.customer_id, role: "authenticated" })}, true)`;
+    try {
+      await tx.savepoint(
+        (sp) => sp`
+          insert into public.warranty_tickets (order_id, customer_id, reason)
+          values (${order.id}, ${order.customer_id}, 'login_failed')
+        `,
+      );
+      ticketOutcome = "ACCEPTED: a ticket was opened on an order past its warranty";
+    } catch (error) {
+      const code = error instanceof postgres.PostgresError ? error.code : "unknown";
+      ticketOutcome = code === "KJ009" ? "ok" : `refused, but not for the warranty (${code})`;
+    }
+    throw new RolledBack();
+  });
+} catch (error) {
   if (!(error instanceof RolledBack)) throw error;
 } finally {
   await sql.end();
 }
 
-if (outcome !== "ok") {
-  console.error(`\nFAIL: direct vault insert on a paid order: ${outcome}`);
+if (ticketOutcome !== "ok") {
+  console.error(`\nFAIL: ticket on an order past its warranty: ${ticketOutcome}`);
   process.exit(1);
 }
-console.log("PASS: a direct vault insert on a paid order is refused; only delivery makes entries.");
+console.log("PASS: a ticket on an order past its warranty is refused by the database.");

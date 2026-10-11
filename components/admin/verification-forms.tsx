@@ -3,6 +3,7 @@
 import { useActionState, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type FormState, type PaymentMethod, emptyFormState, paymentMethodLabel, paymentMethods } from "@/lib/catalogue";
+import { formatRupees } from "@/lib/format";
 import { OTHER_REASON, awayMessage, rejectReasons } from "@/lib/verification";
 import { FieldError, FormMessage, inputClass, invalidProps, labelClass, useServerForm } from "./form-parts";
 
@@ -111,11 +112,14 @@ export function RefundForm({
   price,
   method,
   sentTo,
+  suggestion,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   price: number;
   method: PaymentMethod;
   sentTo: string;
+  // Where the amount starts when it shouldn't be the full price, and why.
+  suggestion?: { amount: number; reason: string };
 }) {
   const { state, formAction, onSubmit, pending } = useServerForm(action);
   const id = useId();
@@ -127,6 +131,11 @@ export function RefundForm({
       <p>
         Send it to <span className="font-mono">{sentTo}</span>, then record it.
       </p>
+      {suggestion && (
+        <p className="text-muted-foreground">
+          Suggested {formatRupees(suggestion.amount)}: {suggestion.reason}. Up to {formatRupees(price)}.
+        </p>
+      )}
       <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
         <div>
           <label htmlFor={f("amount")} className={labelClass}>
@@ -135,7 +144,7 @@ export function RefundForm({
           <input
             id={f("amount")}
             name="amount"
-            defaultValue={price}
+            defaultValue={suggestion?.amount ?? price}
             inputMode="numeric"
             aria-required
             className={`mt-0.5 font-mono tabular-nums ${inputClass}`}

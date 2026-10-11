@@ -29,13 +29,35 @@ export function DeliverForm({
   accountType: AccountType;
 }) {
   const { state, formAction, onSubmit, pending } = useServerForm(action);
-  const id = useId();
-  const f = (name: string) => `${id}-${name}`;
-  const errors = state.fieldErrors;
-  const [kind, setKind] = useState<CredentialKind>(accountType === "email_invite" ? "invite" : "login");
 
   return (
     <form action={formAction} onSubmit={onSubmit} noValidate className="grid max-w-md gap-2">
+      <CredentialFields initialKind={accountType === "email_invite" ? "invite" : "login"} errors={state.fieldErrors} />
+      <div>
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending ? "Delivering…" : "Deliver to vault"}
+        </Button>
+      </div>
+      {!state.ok && state.message && <FormMessage state={state} />}
+    </form>
+  );
+}
+
+// The credential's own fields, shared by delivering and replacing so a
+// replacement is pasted exactly as the first one was.
+export function CredentialFields({
+  initialKind,
+  errors,
+}: {
+  initialKind: CredentialKind;
+  errors: FormState["fieldErrors"];
+}) {
+  const id = useId();
+  const f = (name: string) => `${id}-${name}`;
+  const [kind, setKind] = useState<CredentialKind>(initialKind);
+
+  return (
+    <>
       <fieldset>
         <legend className={labelClass}>What numastore delivered</legend>
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-1">
@@ -128,12 +150,6 @@ export function DeliverForm({
         </div>
       )}
 
-      <div>
-        <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Delivering…" : "Deliver to vault"}
-        </Button>
-      </div>
-      {!state.ok && state.message && <FormMessage state={state} />}
-    </form>
+    </>
   );
 }

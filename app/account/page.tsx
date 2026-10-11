@@ -2,12 +2,14 @@ import { currentUser } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { LiveOrders } from "@/components/live-orders";
+import { LiveTickets } from "@/components/live-tickets";
 import { StatusBadge } from "@/components/status-badge";
 import { listOrders } from "@/lib/data/orders";
 import { type VaultListEntry, listVaultEntries } from "@/lib/data/vault";
 import { formatDays, formatPakistanDate, formatPakistanTime, formatRupees } from "@/lib/format";
 import { customerOrderStatus } from "@/lib/order-status";
-import { credentialKindLabel, daysLeft, vaultDates, vaultStanding, vaultStandingBadge } from "@/lib/vault";
+import { credentialKindLabel, daysLeft, vaultDates, vaultEntryOver, vaultStanding, vaultStandingBadge } from "@/lib/vault";
 
 export const metadata: Metadata = { title: "Your account · Kunji" };
 
@@ -36,6 +38,10 @@ export default function AccountPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Logins for your subscriptions are kept here, visible only to you.
         </p>
+        {/* A delivery, replace or refund shows without a reload. Realtime sends
+            only this customer's own rows, by their policies. */}
+        <LiveOrders />
+        <LiveTickets />
         <Suspense fallback={<p className="mt-3 text-sm text-muted-foreground">Loading your vault…</p>}>
           <Vault />
         </Suspense>
@@ -109,10 +115,10 @@ async function Vault() {
   const now = new Date();
   const rows = entries.map((entry) => {
     const { expiresAt } = vaultDates(entry.delivered_at, entry.orders.duration_days, entry.orders.warranty_days);
-    return { entry, expiresAt, standing: vaultStanding(expiresAt, now) };
+    return { entry, expiresAt, standing: vaultStanding(expiresAt, now, entry.orders.status) };
   });
-  const current = rows.filter((row) => row.standing !== "expired");
-  const expired = rows.filter((row) => row.standing === "expired");
+  const current = rows.filter((row) => !vaultEntryOver(row.standing));
+  const expired = rows.filter((row) => vaultEntryOver(row.standing));
 
   return (
     <>
@@ -157,7 +163,9 @@ function VaultList({
               <div className="mt-1 flex items-baseline justify-between gap-3">
                 <StatusBadge tone={badge.tone} label={badge.label} />
                 <span className="shrink-0 text-muted-foreground">
-                  {standing === "expired"
+                  {standing === "refunded"
+                    ? null
+                    : standing === "expired"
                     ? `Ended ${formatPakistanDate(expiresAt)}`
                     : standing === "expiring_soon"
                       ? `${formatDays(daysLeft(expiresAt, now))} left`

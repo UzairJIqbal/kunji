@@ -71,7 +71,7 @@ export async function getAdminOrder(number: string) {
        supplier_purchases (supplier_order_number, amount_paid, created_at),
        supply_failures (created_at),
        vault_entries (kind, delivered_at, delivered_by),
-       vault_reveals (id, revealed_by, created_at)`,
+       vault_reveals (id, revealed_by, replaced_credential_id, created_at)`,
     )
     .eq("number", Number(number))
     // Moves made in one transaction share a time; the ID keeps their order.

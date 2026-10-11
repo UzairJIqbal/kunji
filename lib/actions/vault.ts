@@ -54,6 +54,9 @@ export async function revealCredential(orderId: string): Promise<RevealResult> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("reveal_credential", { p_order_id: order.data }).single();
   if (error?.code === "42501") return { ok: false, message: "Sign in again to see this." };
+  if (error?.code === "KJ010") {
+    return { ok: false, message: "This order was refunded, so its login is no longer shown." };
+  }
   if (error || !data) return { ok: false, message: "This vault entry couldn't be found." };
 
   try {

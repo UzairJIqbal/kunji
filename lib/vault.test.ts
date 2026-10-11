@@ -28,11 +28,17 @@ test("nonsense dates and days are refused", () => {
 
 test("expiring soon is the last 7 days, expired is from the moment it ends", () => {
   const ends = new Date("2026-10-31T10:00:00Z");
-  assert.equal(vaultStanding(ends, new Date("2026-10-23T10:00:00Z")), "active");
-  assert.equal(vaultStanding(ends, new Date("2026-10-24T10:00:00Z")), "expiring_soon");
-  assert.equal(vaultStanding(ends, new Date("2026-10-31T09:59:59Z")), "expiring_soon");
-  assert.equal(vaultStanding(ends, new Date("2026-10-31T10:00:00Z")), "expired");
-  assert.equal(vaultStanding(ends, new Date("2026-12-01T00:00:00Z")), "expired");
+  assert.equal(vaultStanding(ends, new Date("2026-10-23T10:00:00Z"), "delivered"), "active");
+  assert.equal(vaultStanding(ends, new Date("2026-10-24T10:00:00Z"), "delivered"), "expiring_soon");
+  assert.equal(vaultStanding(ends, new Date("2026-10-31T09:59:59Z"), "delivered"), "expiring_soon");
+  assert.equal(vaultStanding(ends, new Date("2026-10-31T10:00:00Z"), "delivered"), "expired");
+  assert.equal(vaultStanding(ends, new Date("2026-12-01T00:00:00Z"), "delivered"), "expired");
+});
+
+test("a refunded order's entry is no longer valid, however long it had left", () => {
+  const ends = new Date("2026-10-31T10:00:00Z");
+  assert.equal(vaultStanding(ends, new Date("2026-10-12T10:00:00Z"), "refunded"), "refunded");
+  assert.equal(vaultStanding(ends, new Date("2026-12-01T00:00:00Z"), "refunded"), "refunded");
 });
 
 test("days left round up, and never go below zero", () => {

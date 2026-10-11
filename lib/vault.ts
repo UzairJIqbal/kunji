@@ -1,7 +1,7 @@
 import { z } from "zod";
 // Relative, with their extensions, so the tests can load this file directly.
 import { requiredText } from "./catalogue.ts";
-import type { StatusTone } from "./order-status.ts";
+import type { OrderStatus, StatusTone } from "./order-status.ts";
 import { Constants, type Database } from "./supabase/database.types.ts";
 
 export type CredentialKind = Database["public"]["Enums"]["credential_kind"];
@@ -86,9 +86,12 @@ export function vaultDates(
   };
 }
 
-export type VaultStanding = "active" | "expiring_soon" | "expired";
+export type VaultStanding = "active" | "expiring_soon" | "expired" | "refunded";
 
-export function vaultStanding(expiresAt: Date, now: Date): VaultStanding {
+// A refunded order's entry stays in the vault as a record, but the money went
+// back, so it's no longer valid however long the plan had left.
+export function vaultStanding(expiresAt: Date, now: Date, orderStatus: OrderStatus): VaultStanding {
+  if (orderStatus === "refunded") return "refunded";
   const left = expiresAt.getTime() - now.getTime();
   if (left <= 0) return "expired";
   if (left <= EXPIRING_SOON_DAYS * DAY_MS) return "expiring_soon";
@@ -99,7 +102,13 @@ export const vaultStandingBadge: Record<VaultStanding, { label: string; tone: St
   active: { label: "Active", tone: "success" },
   expiring_soon: { label: "Expiring soon", tone: "warning" },
   expired: { label: "Expired", tone: "plain" },
+  refunded: { label: "Refunded, no longer valid", tone: "plain" },
 };
+
+// Expired and refunded entries are both over; they're listed together.
+export function vaultEntryOver(standing: VaultStanding): boolean {
+  return standing === "expired" || standing === "refunded";
+}
 
 // Whole days left, rounded up: 6 days and an hour is "7 days left", and the
 // last few hours are "1 day left" rather than 0.

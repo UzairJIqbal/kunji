@@ -432,6 +432,96 @@ export type Database = {
           },
         ]
       }
+      replaced_credentials: {
+        Row: {
+          credential: string
+          id: number
+          kind: Database["public"]["Enums"]["credential_kind"]
+          order_id: string
+          replaced_at: string
+          replacement_id: string
+        }
+        Insert: {
+          credential: string
+          id?: never
+          kind: Database["public"]["Enums"]["credential_kind"]
+          order_id: string
+          replaced_at?: string
+          replacement_id: string
+        }
+        Update: {
+          credential?: string
+          id?: never
+          kind?: Database["public"]["Enums"]["credential_kind"]
+          order_id?: string
+          replaced_at?: string
+          replacement_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replaced_credentials_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vault_entries"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "replaced_credentials_replacement_id_fkey"
+            columns: ["replacement_id"]
+            isOneToOne: true
+            referencedRelation: "replacements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      replacements: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          order_id: string
+          replaced_by: string | null
+          source: Database["public"]["Enums"]["replacement_source"]
+          supplier_order_number: string | null
+          ticket_id: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          id?: string
+          order_id: string
+          replaced_by?: string | null
+          source: Database["public"]["Enums"]["replacement_source"]
+          supplier_order_number?: string | null
+          ticket_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          replaced_by?: string | null
+          source?: Database["public"]["Enums"]["replacement_source"]
+          supplier_order_number?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replacements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "replacements_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "warranty_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           away: boolean
@@ -514,6 +604,83 @@ export type Database = {
           },
         ]
       }
+      ticket_claims: {
+        Row: {
+          claimed_by: string | null
+          created_at: string
+          order_id: string
+          supplier_reference: string
+          ticket_id: string
+        }
+        Insert: {
+          claimed_by?: string | null
+          created_at?: string
+          order_id: string
+          supplier_reference: string
+          ticket_id: string
+        }
+        Update: {
+          claimed_by?: string | null
+          created_at?: string
+          order_id?: string
+          supplier_reference?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_claims_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_claims_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "warranty_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_messages: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          customer_id: string
+          from_seller: boolean
+          id: number
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          customer_id: string
+          from_seller?: boolean
+          id?: never
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          customer_id?: string
+          from_seller?: boolean
+          id?: never
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vault_entries: {
         Row: {
           credential: string
@@ -561,6 +728,7 @@ export type Database = {
           customer_id: string
           id: number
           order_id: string
+          replaced_credential_id: number | null
           revealed_by: string
         }
         Insert: {
@@ -568,6 +736,7 @@ export type Database = {
           customer_id: string
           id?: never
           order_id: string
+          replaced_credential_id: number | null
           revealed_by: string
         }
         Update: {
@@ -575,6 +744,7 @@ export type Database = {
           customer_id?: string
           id?: never
           order_id?: string
+          replaced_credential_id?: number | null
           revealed_by?: string
         }
         Relationships: [
@@ -592,6 +762,57 @@ export type Database = {
             referencedRelation: "vault_entries"
             referencedColumns: ["order_id"]
           },
+          {
+            foreignKeyName: "vault_reveals_replaced_credential_id_fkey"
+            columns: ["replaced_credential_id"]
+            isOneToOne: false
+            referencedRelation: "replaced_credentials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_tickets: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          note: string
+          order_id: string
+          reason: Database["public"]["Enums"]["ticket_reason"]
+          screenshot_path: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          note?: string
+          order_id: string
+          reason: Database["public"]["Enums"]["ticket_reason"]
+          screenshot_path?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          note?: string
+          order_id?: string
+          reason?: Database["public"]["Enums"]["ticket_reason"]
+          screenshot_path?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_tickets_order_id_customer_id_fkey"
+            columns: ["order_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id", "customer_id"]
+          },
         ]
       }
     }
@@ -600,6 +821,10 @@ export type Database = {
     }
     Functions: {
       approve_payment: { Args: { p_order_id: string }; Returns: undefined }
+      claim_ticket: {
+        Args: { p_supplier_reference: string; p_ticket_id: string }
+        Returns: undefined
+      }
       create_plan: {
         Args: {
           p_duration_days: number
@@ -653,6 +878,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      refund_ticket: {
+        Args: {
+          p_amount: number
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_reference: string
+          p_ticket_id: string
+        }
+        Returns: undefined
+      }
       refund_unsupplied_order: {
         Args: {
           p_amount: number
@@ -666,11 +900,37 @@ export type Database = {
         Args: { p_order_id: string; p_reason: string }
         Returns: undefined
       }
+      replace_by_purchase: {
+        Args: {
+          p_cost: number
+          p_credential: string
+          p_kind: Database["public"]["Enums"]["credential_kind"]
+          p_supplier_order_number: string
+          p_ticket_id: string
+        }
+        Returns: undefined
+      }
+      replace_from_claim: {
+        Args: {
+          p_credential: string
+          p_kind: Database["public"]["Enums"]["credential_kind"]
+          p_ticket_id: string
+        }
+        Returns: undefined
+      }
       reveal_credential: {
         Args: { p_order_id: string }
         Returns: {
           credential: string
           kind: Database["public"]["Enums"]["credential_kind"]
+        }[]
+      }
+      reveal_replaced_credential: {
+        Args: { p_replaced_credential_id: number }
+        Returns: {
+          credential: string
+          kind: Database["public"]["Enums"]["credential_kind"]
+          order_id: string
         }[]
       }
       submit_payment_proof: {
@@ -714,6 +974,9 @@ export type Database = {
         | "nayapay"
         | "sadapay"
         | "bank_transfer"
+      replacement_source: "claim" | "purchase"
+      ticket_reason: "login_failed" | "ended_early" | "other"
+      ticket_status: "open" | "claimed" | "replaced" | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -860,6 +1123,9 @@ export const Constants = {
         "sadapay",
         "bank_transfer",
       ],
+      replacement_source: ["claim", "purchase"],
+      ticket_reason: ["login_failed", "ended_early", "other"],
+      ticket_status: ["open", "claimed", "replaced", "refunded"],
     },
   },
 } as const

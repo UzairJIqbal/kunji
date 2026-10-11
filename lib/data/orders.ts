@@ -62,6 +62,7 @@ export async function getOrder(number: string) {
     refund: refunds[0] ?? null,
     outOfStock: supply_failures.length > 0,
     inVault: vault_entries.length > 0,
+    deliveredAt: vault_entries[0]?.delivered_at ?? null,
   };
 }
 

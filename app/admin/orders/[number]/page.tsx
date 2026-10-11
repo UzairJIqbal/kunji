@@ -11,17 +11,20 @@ import { LiveOrders } from "@/components/live-orders";
 import { RevealCredential } from "@/components/vault/reveal-credential";
 import { StatusBadge } from "@/components/status-badge";
 import { cannotSupply, markBought, refundUnsuppliedOrder } from "@/lib/actions/buying";
+import { revealReplacedCredential } from "@/lib/actions/tickets";
 import { deliverOrder, revealCredential } from "@/lib/actions/vault";
 import { approvePayment, refundRejectedOrder, rejectPayment } from "@/lib/actions/verification";
 import { priceDifference } from "@/lib/buying";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { viewerSeesAdminRows } from "@/lib/data/admin";
+import { listOrderTickets, listReplacedCredentials } from "@/lib/data/tickets";
 import { describeActors, getAdminOrder } from "@/lib/data/verification";
 import { formatDays, formatPakistanTime, formatRupees, formatWarranty } from "@/lib/format";
 import { adminStatusLabel, statusTone } from "@/lib/order-status";
 import { whatsappLink } from "@/lib/storefront";
 import { credentialKindLabel } from "@/lib/vault";
 import { paidIntoLabel } from "@/lib/verification";
+import { adminTicketStatus, ticketReasonLabel } from "@/lib/warranty";
 
 export async function generateMetadata({ params }: PageProps<"/admin/orders/[number]">): Promise<Metadata> {
   return { title: `Order #${(await params).number} · Admin · Kunji` };
@@ -45,6 +48,9 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
   const order = await getAdminOrder((await params).number);
   if (!order) notFound();
 
+  const [tickets, replaced] = order.vault
+    ? await Promise.all([listOrderTickets(order.id), listReplacedCredentials(order.id)])
+    : [[], []];
   const actors = await describeActors(
     [
       ...order.order_events.map((event) => event.actor_id),
@@ -321,12 +327,72 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
             <ol className="mt-1 divide-y border-y">
               {order.reveals.map((reveal) => (
                 <li key={reveal.id} className="flex flex-wrap justify-between gap-x-3 py-1">
-                  <span>{named(reveal.revealed_by)}</span>
+                  <span>
+                    {named(reveal.revealed_by)}
+                    {reveal.replaced_credential_id !== null && (
+                      <span className="text-muted-foreground"> (a replaced credential)</span>
+                    )}
+                  </span>
                   <span className="text-muted-foreground">{formatPakistanTime(reveal.created_at)}</span>
                 </li>
               ))}
             </ol>
           )}
+        </section>
+      )}
+
+      {replaced.length > 0 && (
+        <section aria-labelledby="replaced-heading" className="mt-4">
+          <h2 id="replaced-heading" className={headingClass}>
+            Replaced credentials, latest first
+          </h2>
+          <ol className="mt-1 grid gap-2">
+            {replaced.map((old) => (
+              <li key={old.id} className="border-t pt-1.5">
+                <p>
+                  <span className="font-medium text-muted-foreground">Replaced</span>{" "}
+                  {formatPakistanTime(old.replaced_at)}, {credentialKindLabel[old.kind].toLowerCase()}.{" "}
+                  {old.replacements?.source === "purchase" ? (
+                    <>
+                      Bought again as <span className="font-mono">{old.replacements.supplier_order_number}</span> for{" "}
+                      <span className="font-mono tabular-nums">{formatRupees(old.replacements.cost)}</span>
+                    </>
+                  ) : (
+                    <>
+                      Claimed with numastore, cost <span className="font-mono tabular-nums">{formatRupees(0)}</span>
+                    </>
+                  )}
+                </p>
+                <div className="mt-1 max-w-md">
+                  <RevealCredential reveal={revealReplacedCredential.bind(null, old.id)} compact />
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {tickets.length > 0 && (
+        <section aria-labelledby="tickets-heading" className="mt-4">
+          <h2 id="tickets-heading" className={headingClass}>
+            Tickets
+          </h2>
+          <ol className="mt-1 divide-y border-y">
+            {tickets.map((ticket) => {
+              const status = adminTicketStatus[ticket.status];
+              return (
+                <li key={ticket.id} className="flex flex-wrap justify-between gap-x-3 py-1">
+                  <Link href={`/admin/tickets/${ticket.id}`} className={linkClass}>
+                    {ticketReasonLabel[ticket.reason]}
+                  </Link>
+                  <span>
+                    <StatusBadge tone={status.tone} label={status.label} />
+                    <span className="text-muted-foreground"> {formatPakistanTime(ticket.created_at)}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
         </section>
       )}
 

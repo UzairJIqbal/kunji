@@ -6,14 +6,17 @@ import { LiveOrders } from "@/components/live-orders";
 import { StatusBadge } from "@/components/status-badge";
 import { primaryButtonClass, textLinkClass } from "@/components/store/fields";
 import { PaymentForm } from "@/components/store/payment-form";
+import { WarrantySection } from "@/components/store/warranty-section";
 import { submitProof } from "@/lib/actions/checkout";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { listPayableAccounts } from "@/lib/data/checkout";
 import { getOrder } from "@/lib/data/orders";
+import { listOrderTickets } from "@/lib/data/tickets";
 import { whatsappNumber } from "@/lib/env";
 import { formatDays, formatPakistanTime, formatRupees, formatWarranty } from "@/lib/format";
 import { customerEventLabel, customerOrderStatus, isExpired } from "@/lib/order-status";
 import { whatsappLink } from "@/lib/storefront";
+import { vaultDates } from "@/lib/vault";
 
 export async function generateMetadata({
   params,
@@ -42,7 +45,10 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
   const status = customerOrderStatus(order, now);
   const awaiting = order.status === "awaiting_payment";
   const expired = isExpired(order, now);
-  const accounts = awaiting ? await listPayableAccounts() : [];
+  const [accounts, tickets] = await Promise.all([
+    awaiting ? listPayableAccounts() : [],
+    order.deliveredAt ? listOrderTickets(order.id) : [],
+  ]);
   const help = whatsappLink(whatsappNumber(), `Hi, about my Kunji order #${order.number}`);
 
   const details = [
@@ -98,6 +104,20 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
             Open in vault
           </Link>
         </section>
+      )}
+
+      {/* Warranty runs from the first delivery, replacements or not. */}
+      {order.deliveredAt && (
+        <WarrantySection
+          orderId={order.id}
+          orderNumber={order.number}
+          canReport={order.status === "delivered" || order.status === "replaced"}
+          warrantyDays={order.warranty_days}
+          warrantyEndsAt={vaultDates(order.deliveredAt, order.duration_days, order.warranty_days).warrantyEndsAt}
+          now={now}
+          tickets={tickets}
+          help={help}
+        />
       )}
 
       {order.status === "rejected" && order.rejection && (
