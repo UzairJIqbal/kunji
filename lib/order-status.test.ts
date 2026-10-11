@@ -18,12 +18,22 @@ test("an order with proof never expires, however late it is", () => {
 });
 
 test("a customer sees an expired order as expired, in no status colour", () => {
-  assert.deepEqual(customerOrderStatus({ status: "awaiting_payment", expires_at: before }, now), {
+  assert.deepEqual(customerOrderStatus({ status: "awaiting_payment", expires_at: before, price: 1200, outOfStock: false }, now), {
     label: "Expired",
     tone: "plain",
   });
-  assert.deepEqual(customerOrderStatus({ status: "verifying", expires_at: before }, now), {
+  assert.deepEqual(customerOrderStatus({ status: "verifying", expires_at: before, price: 1200, outOfStock: false }, now), {
     label: "Checking your payment",
     tone: "warning",
   });
+});
+
+test("a paid order numastore couldn't supply says its refund is coming, until it is recorded", () => {
+  const order = { expires_at: before, price: 1450, outOfStock: true };
+  assert.deepEqual(customerOrderStatus({ ...order, status: "paid" }, now), {
+    label: "This item is out of stock. Your refund of Rs 1,450 is on its way.",
+    tone: "warning",
+  });
+  assert.equal(customerOrderStatus({ ...order, status: "refunded" }, now).label, "Refunded");
+  assert.equal(customerOrderStatus({ ...order, status: "paid", outOfStock: false }, now).label, "Preparing your order");
 });

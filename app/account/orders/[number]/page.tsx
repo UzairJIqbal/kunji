@@ -108,6 +108,9 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
           <h2 id="refund-heading" className="text-base font-semibold">
             Refunded {formatRupees(order.refund.amount)}
           </h2>
+          {order.outOfStock && (
+            <p className="mt-1 text-sm">This item went out of stock, so we sent your money back.</p>
+          )}
           <dl className="mt-2 grid gap-2 text-sm">
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Sent to</dt>

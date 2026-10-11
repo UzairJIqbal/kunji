@@ -64,7 +64,10 @@ export async function getAdminOrder(number: string) {
        payments (method, transaction_id, sender_number, created_at,
                  payment_accounts (account_title, account_number, bank_name)),
        payment_rejections (reason),
-       refunds (amount, method, reference, sent_to, created_at)`,
+       refunds (amount, method, reference, sent_to, created_at),
+       plans (product_id, plan_supplier_details (supplier_price, numastore_url)),
+       supplier_purchases (supplier_order_number, amount_paid, created_at),
+       supply_failures (created_at)`,
     )
     .eq("number", Number(number))
     // Moves made in one transaction share a time; the ID keeps their order.
@@ -72,18 +75,23 @@ export async function getAdminOrder(number: string) {
     .limit(EVENT_LIMIT, { referencedTable: "order_events" })
     .order("created_at", { referencedTable: "payments", ascending: false })
     .limit(1, { referencedTable: "payments" })
+    .limit(1, { referencedTable: "supplier_purchases" })
     .maybeSingle();
   if (error) throw new Error(`Couldn't load the order: ${error.message}`);
   if (!data) return null;
 
-  // One of each at most (each table's key is the order), but the composite
-  // foreign key means PostgREST hands them back as lists.
-  const { payments, payment_rejections, refunds, ...order } = data;
+  // One of each at most (each table's key is the order, and an order is
+  // bought once), but PostgREST hands them back as lists.
+  const { payments, payment_rejections, refunds, plans, supplier_purchases, supply_failures, ...order } = data;
   return {
     ...order,
     payment: payments[0] ?? null,
     rejection: payment_rejections[0] ?? null,
     refund: refunds[0] ?? null,
+    productId: plans.product_id,
+    supplier: plans.plan_supplier_details,
+    purchase: supplier_purchases[0] ?? null,
+    supplyFailure: supply_failures[0] ?? null,
   };
 }
 

@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ActionButton } from "@/components/admin/action-button";
+import { BoughtForm } from "@/components/admin/buying-forms";
 import { NotAdmin } from "@/components/admin/not-admin";
 import { ApproveButton, RefundForm, RejectForm } from "@/components/admin/verification-forms";
 import { LiveOrders } from "@/components/live-orders";
 import { StatusBadge } from "@/components/status-badge";
+import { cannotSupply, markBought, refundUnsuppliedOrder } from "@/lib/actions/buying";
 import { approvePayment, refundRejectedOrder, rejectPayment } from "@/lib/actions/verification";
+import { priceDifference } from "@/lib/buying";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { viewerSeesAdminRows } from "@/lib/data/admin";
 import { describeActors, getAdminOrder } from "@/lib/data/verification";
@@ -132,6 +136,51 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
         </p>
       )}
 
+      <section aria-labelledby="supplier-heading" className="mt-4">
+        <h2 id="supplier-heading" className={headingClass}>
+          numastore
+        </h2>
+        <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3">
+          <dt className="text-muted-foreground">Link</dt>
+          <dd className="min-w-0 truncate">
+            {order.supplier ? (
+              <a href={order.supplier.numastore_url} target="_blank" rel="noreferrer" className={`font-mono ${linkClass}`}>
+                {order.supplier.numastore_url}
+              </a>
+            ) : (
+              "—"
+            )}
+          </dd>
+          <dt className="text-muted-foreground">Listed at</dt>
+          <dd className="font-mono tabular-nums">
+            {order.supplier ? formatRupees(order.supplier.supplier_price) : "—"}
+          </dd>
+          {order.purchase && (
+            <>
+              <dt className="text-muted-foreground">Order no.</dt>
+              <dd className="min-w-0 break-all font-mono">{order.purchase.supplier_order_number}</dd>
+              <dt className="text-muted-foreground">Paid</dt>
+              <dd className="font-mono tabular-nums">{formatRupees(order.purchase.amount_paid)}</dd>
+              <dt className="text-muted-foreground">Bought</dt>
+              <dd>{formatPakistanTime(order.purchase.created_at)}</dd>
+            </>
+          )}
+          {order.supplyFailure && (
+            <>
+              <dt className="text-muted-foreground">Couldn&apos;t supply</dt>
+              <dd>Recorded {formatPakistanTime(order.supplyFailure.created_at)}; product marked sold out</dd>
+            </>
+          )}
+        </dl>
+        {order.purchase && order.supplier && (
+          <PriceDifference
+            paid={order.purchase.amount_paid}
+            listed={order.supplier.supplier_price}
+            productId={order.productId}
+          />
+        )}
+      </section>
+
       {order.refund && (
         <section aria-labelledby="refund-heading" className="mt-4">
           <h2 id="refund-heading" className={headingClass}>
@@ -191,6 +240,42 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
         </section>
       )}
 
+      {order.status === "paid" && !order.supplyFailure && (
+        <section aria-labelledby="buy-heading" className="mt-4">
+          <h2 id="buy-heading" className={headingClass}>
+            Buy it on numastore, then record it
+          </h2>
+          <div className="mt-1.5 flex flex-wrap items-end justify-between gap-2">
+            <BoughtForm action={markBought.bind(null, order.id)} listedPrice={order.supplier?.supplier_price ?? null} />
+            <ActionButton
+              action={cannotSupply.bind(null, order.id)}
+              label="numastore can't supply it"
+              pendingLabel="Marking sold out…"
+            />
+          </div>
+        </section>
+      )}
+
+      {order.status === "paid" && order.supplyFailure && (
+        <section aria-labelledby="refund-send-heading" className="mt-4">
+          <h2 id="refund-send-heading" className={headingClass}>
+            Refund to send
+          </h2>
+          <div className="mt-1.5">
+            {order.payment ? (
+              <RefundForm
+                action={refundUnsuppliedOrder.bind(null, order.id)}
+                price={order.price}
+                method={order.payment.method}
+                sentTo={order.payment.sender_number}
+              />
+            ) : (
+              <p className="text-danger">This order has no payment to refund to.</p>
+            )}
+          </div>
+        </section>
+      )}
+
       <section aria-labelledby="timeline-heading" className="mt-5">
         <h2 id="timeline-heading" className={headingClass}>
           Timeline
@@ -218,5 +303,21 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
         </Link>
       </p>
     </>
+  );
+}
+
+// What the seller paid against what the plan lists now. The plan's price is
+// never changed for them; this says so and links to where they'd change it.
+function PriceDifference({ paid, listed, productId }: { paid: number; listed: number; productId: string }) {
+  const difference = priceDifference(paid, listed);
+  if (!difference) return null;
+  return (
+    <p className="mt-1">
+      Paid {difference}.{" "}
+      <Link href={`/admin/products/${productId}`} className={linkClass}>
+        Edit the plan
+      </Link>{" "}
+      if numastore&apos;s price has changed.
+    </p>
   );
 }

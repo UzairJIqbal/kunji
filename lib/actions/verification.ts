@@ -1,7 +1,12 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
+import { MALFORMED, decisionFailure, failed, saved } from "@/lib/actions/results";
+import { buyNeededPing } from "@/lib/buying";
 import { type FormState, formValues, idSchema, refusal } from "@/lib/catalogue";
+import { ntfyEnv } from "@/lib/env";
+import { pingSeller } from "@/lib/ntfy";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { awaySchema, refundSchema, rejectionSchema } from "@/lib/verification";
 
@@ -10,32 +15,6 @@ import { awaySchema, refundSchema, rejectionSchema } from "@/lib/verification";
 // with who made it. The browser names the order and nothing else it could lie
 // about; the price and the current state are the database's.
 
-type DbError = { code?: string; message: string };
-
-const MALFORMED = "Not saved: the request was malformed. Reload the page and try again.";
-
-function failed(message: string, prev: FormState, fieldErrors: FormState["fieldErrors"] = {}): FormState {
-  return { ok: false, message, fieldErrors, version: prev.version };
-}
-
-function saved(message: string, prev: FormState): FormState {
-  return { ok: true, message, fieldErrors: {}, version: prev.version + 1 };
-}
-
-function decisionFailure(error: DbError, prev: FormState): FormState {
-  switch (error.code) {
-    case "42501":
-      return failed("Not saved: this account isn't an admin.", prev);
-    case "P0002":
-      return failed("Not saved: this order no longer exists.", prev);
-    // Another device decided first, or this page was stale.
-    case "KJ006":
-      return failed("This order has already moved on. Reload to see where it is.", prev);
-    default:
-      return failed(`Not saved: ${error.message}`, prev);
-  }
-}
-
 export async function approvePayment(orderId: string, prev: FormState): Promise<FormState> {
   const order = idSchema.safeParse(orderId);
   if (!order.success) return failed(MALFORMED, prev);
@@ -43,6 +22,21 @@ export async function approvePayment(orderId: string, prev: FormState): Promise<
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc("approve_payment", { p_order_id: order.data });
   if (error) return decisionFailure(error, prev);
+
+  // The next step is buying it, so it goes to the seller's phone now. After
+  // the response, and never able to undo the approval.
+  after(async () => {
+    const { data: approved, error: readError } = await supabase
+      .from("orders")
+      .select("number, price")
+      .eq("id", order.data)
+      .single();
+    if (readError) {
+      console.error(`Ping skipped: couldn't read the order (${readError.code ?? "no code"})`);
+      return;
+    }
+    await pingSeller(buyNeededPing(approved, ntfyEnv().siteUrl));
+  });
 
   refresh();
   return saved("Approved.", prev);

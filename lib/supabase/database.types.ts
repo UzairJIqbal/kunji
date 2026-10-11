@@ -482,6 +482,35 @@ export type Database = {
           },
         ]
       }
+      supply_failures: {
+        Row: {
+          created_at: string
+          customer_id: string
+          order_id: string
+          recorded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          order_id: string
+          recorded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          order_id?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_failures_order_id_customer_id_fkey"
+            columns: ["order_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id", "customer_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -499,6 +528,14 @@ export type Database = {
         }
         Returns: string
       }
+      mark_order_bought: {
+        Args: {
+          p_amount_paid: number
+          p_order_id: string
+          p_supplier_order_number: string
+        }
+        Returns: undefined
+      }
       mark_plan_price_checked: { Args: { p_plan_id: string }; Returns: string }
       order_status_counts: {
         Args: never
@@ -515,7 +552,17 @@ export type Database = {
         }
         Returns: number
       }
+      record_cannot_supply: { Args: { p_order_id: string }; Returns: undefined }
       refund_rejected_order: {
+        Args: {
+          p_amount: number
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_order_id: string
+          p_reference: string
+        }
+        Returns: undefined
+      }
+      refund_unsupplied_order: {
         Args: {
           p_amount: number
           p_method: Database["public"]["Enums"]["payment_method"]

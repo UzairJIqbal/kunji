@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ActionButton } from "@/components/admin/action-button";
+import { BoughtForm, WaitingClock } from "@/components/admin/buying-forms";
 import { FindOrder } from "@/components/admin/find-order";
-import { ApproveButton, AwaySwitch, RejectForm } from "@/components/admin/verification-forms";
+import { ApproveButton, AwaySwitch, RefundForm, RejectForm } from "@/components/admin/verification-forms";
 import { LiveOrders } from "@/components/live-orders";
+import { CopyButton } from "@/components/store/copy-button";
+import { cannotSupply, markBought, refundUnsuppliedOrder } from "@/lib/actions/buying";
 import { approvePayment, rejectPayment, switchAwayOff, switchAwayOn } from "@/lib/actions/verification";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { viewerSeesAdminRows } from "@/lib/data/admin";
+import { type BuyRow, listOrdersToBuy } from "@/lib/data/buying";
 import { getOrderStatusCounts } from "@/lib/data/orders";
 import { type QueueRow, getStoreSettings, listVerificationQueue } from "@/lib/data/verification";
 import { formatDays, formatPakistanTime, formatRupees } from "@/lib/format";
@@ -24,14 +29,29 @@ export default function AdminPage() {
     <main className="mt-3">
       <h1 className="text-sm font-semibold">Admin</h1>
 
-      <section aria-labelledby="queue-heading" className="mt-3">
-        <h2 id="queue-heading" className={headingClass}>
-          Payments to check, oldest first
-        </h2>
-        <Suspense fallback={<p className="mt-1.5 text-muted-foreground">Loading…</p>}>
-          <Queue />
+      <div className="mt-3 grid items-start gap-5 lg:grid-cols-2">
+        <section aria-labelledby="queue-heading">
+          <h2 id="queue-heading" className={headingClass}>
+            Payments to check, oldest first
+          </h2>
+          <Suspense fallback={<p className="mt-1.5 text-muted-foreground">Loading…</p>}>
+            <Queue />
+          </Suspense>
+        </section>
+
+        <Suspense
+          fallback={
+            <section aria-labelledby="buy-heading">
+              <h2 id="buy-heading" className={headingClass}>
+                To buy on numastore, oldest first
+              </h2>
+              <p className="mt-1.5 text-muted-foreground">Loading…</p>
+            </section>
+          }
+        >
+          <BuyLists />
         </Suspense>
-      </section>
+      </div>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
         <section aria-labelledby="away-heading">
@@ -129,6 +149,144 @@ function QueueItem({ row }: { row: QueueRow }) {
           <ApproveButton action={approvePayment.bind(null, order.id)} />
           <RejectForm action={rejectPayment.bind(null, order.id)} />
         </div>
+      </div>
+    </li>
+  );
+}
+
+// Paid orders, split by whether numastore could supply them. The queue's
+// live listener re-reads the whole page, so these update with it.
+async function BuyLists() {
+  if (!(await viewerSeesAdminRows())) return null;
+  const { toBuy, toRefund } = await listOrdersToBuy();
+  // Read after the data: the clocks start from when this page was made.
+  const renderedAt = new Date().toISOString();
+  return (
+    <div className="grid gap-5">
+      <section aria-labelledby="buy-heading">
+        <h2 id="buy-heading" className={headingClass}>
+          To buy on numastore, oldest first
+        </h2>
+        {toBuy.length === 0 ? (
+          <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+            Nothing to buy. Approved payments show up here.
+          </p>
+        ) : (
+          <ol className="mt-1.5 divide-y rounded-md border">
+            {toBuy.map((row) => (
+              <BuyItem key={row.id} row={row} renderedAt={renderedAt} />
+            ))}
+          </ol>
+        )}
+      </section>
+
+      {toRefund.length > 0 && (
+        <section aria-labelledby="refunds-heading">
+          <h2 id="refunds-heading" className={headingClass}>
+            Refunds to send: numastore couldn&apos;t supply these
+          </h2>
+          <ol className="mt-1.5 divide-y rounded-md border">
+            {toRefund.map((row) => (
+              <RefundItem key={row.id} row={row} />
+            ))}
+          </ol>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function BuyItem({ row, renderedAt }: { row: BuyRow; renderedAt: string }) {
+  const item = `${row.product_name}, ${formatDays(row.duration_days)}`;
+  return (
+    <li className="p-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <span className="inline-flex items-baseline gap-1.5">
+          <Link
+            href={`/admin/orders/${row.number}`}
+            className="font-mono font-medium underline-offset-4 hover:underline"
+          >
+            #{row.number}
+          </Link>
+          <CopyButton value={String(row.number)} what="Kunji order number" compact />
+        </span>
+        <WaitingClock paidAt={row.paidAt} renderedAt={renderedAt} />
+      </div>
+      <dl className="mt-1 grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-0.5 text-xs">
+        <dt className="text-muted-foreground">Item</dt>
+        <dd className="flex min-w-0 items-center gap-1.5">
+          <span className="min-w-0 truncate text-[13px]">{item}</span>
+          <CopyButton value={item} what="product and plan" compact />
+        </dd>
+        <dt className="text-muted-foreground">numastore</dt>
+        <dd className="flex min-w-0 items-center gap-1.5">
+          {row.supplier ? (
+            <>
+              {/* Opens in the seller's own browser. The app never fetches it. */}
+              <a
+                href={row.supplier.numastore_url}
+                target="_blank"
+                rel="noreferrer"
+                className="min-w-0 truncate font-mono text-primary underline-offset-4 hover:underline"
+              >
+                {row.supplier.numastore_url}
+              </a>
+              <CopyButton value={row.supplier.numastore_url} what="numastore link" compact />
+            </>
+          ) : (
+            <Link href={`/admin/products/${row.productId}`} className="text-danger underline-offset-4 hover:underline">
+              This plan has no numastore link. Add it
+            </Link>
+          )}
+        </dd>
+        {row.activation_email && (
+          <>
+            <dt className="text-muted-foreground">Activate</dt>
+            <dd className="flex min-w-0 items-center gap-1.5">
+              <span className="min-w-0 break-all font-mono">{row.activation_email}</span>
+              <CopyButton value={row.activation_email} what="activation email" compact />
+            </dd>
+          </>
+        )}
+      </dl>
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-2">
+        <BoughtForm action={markBought.bind(null, row.id)} listedPrice={row.supplier?.supplier_price ?? null} />
+        <ActionButton
+          action={cannotSupply.bind(null, row.id)}
+          label="numastore can't supply it"
+          pendingLabel="Marking sold out…"
+        />
+      </div>
+    </li>
+  );
+}
+
+function RefundItem({ row }: { row: BuyRow }) {
+  return (
+    <li className="p-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <Link
+          href={`/admin/orders/${row.number}`}
+          className="font-mono font-medium underline-offset-4 hover:underline"
+        >
+          #{row.number}
+        </Link>
+        <span className="font-mono font-semibold tabular-nums">{formatRupees(row.price)}</span>
+      </div>
+      <p className="truncate">
+        {row.product_name}, {formatDays(row.duration_days)}
+      </p>
+      <div className="mt-1.5">
+        {row.payment ? (
+          <RefundForm
+            action={refundUnsuppliedOrder.bind(null, row.id)}
+            price={row.price}
+            method={row.payment.method}
+            sentTo={row.payment.sender_number}
+          />
+        ) : (
+          <p className="text-danger">This order has no payment to refund to.</p>
+        )}
       </div>
     </li>
   );

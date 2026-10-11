@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 
-// Copies the account number so it can be pasted into the wallet app without
-// retyping. The label changes to say it worked; nothing else moves.
-export function CopyButton({ value, what }: { value: string; what: string }) {
+// Copies a value so it can be pasted elsewhere without retyping: the account
+// number into the wallet app, or an order's details into numastore. The label
+// changes to say it worked; nothing else moves. Compact is the admin's size.
+export function CopyButton({ value, what, compact = false }: { value: string; what: string; compact?: boolean }) {
   const [copied, setCopied] = useState<boolean | null>(null);
 
   async function copy() {
@@ -20,7 +21,9 @@ export function CopyButton({ value, what }: { value: string; what: string }) {
     <button
       type="button"
       onClick={copy}
-      className="inline-flex min-h-11 shrink-0 items-center rounded-lg border px-3 text-sm font-medium text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className={`inline-flex shrink-0 items-center border font-medium text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+        compact ? "h-6 rounded-md px-1.5 text-xs" : "min-h-11 rounded-lg px-3 text-sm"
+      }`}
     >
       {copied === null ? "Copy" : copied ? "Copied" : "Copy failed"}
       <span className="sr-only"> {what}</span>

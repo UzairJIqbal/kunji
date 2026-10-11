@@ -13,11 +13,11 @@ export async function listOrders() {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from("orders")
-    .select("id, number, status, price, product_name, duration_days, expires_at, created_at")
+    .select("id, number, status, price, product_name, duration_days, expires_at, created_at, supply_failures (created_at)")
     .order("created_at", { ascending: false })
     .limit(ORDER_LIST_LIMIT);
   if (error) throw new Error(`Couldn't load orders: ${error.message}`);
-  return data;
+  return data.map(({ supply_failures, ...order }) => ({ ...order, outOfStock: supply_failures.length > 0 }));
 }
 
 const EVENT_LIMIT = 50;
@@ -37,7 +37,8 @@ export async function getOrder(number: string) {
        order_events (id, to_status, created_at),
        payments (method, transaction_id, sender_number, created_at),
        payment_rejections (reason),
-       refunds (amount, method, reference, sent_to, created_at)`,
+       refunds (amount, method, reference, sent_to, created_at),
+       supply_failures (created_at)`,
     )
     .eq("number", Number(number))
     // Moves made in one transaction share a time; the ID keeps their order.
@@ -48,14 +49,17 @@ export async function getOrder(number: string) {
     .maybeSingle();
   if (error) throw new Error(`Couldn't load the order: ${error.message}`);
   if (!data) return null;
-  // One rejection and one refund at most, each keyed by the order, but
-  // PostgREST hands them back as lists.
-  const { payments, payment_rejections, refunds, ...order } = data;
+  // One rejection, refund and supply failure at most, each keyed by the
+  // order, but PostgREST hands them back as lists. Only whether the item was
+  // out of stock reaches the customer: nothing from the supplier tables is
+  // read here, and their policies would refuse it anyway.
+  const { payments, payment_rejections, refunds, supply_failures, ...order } = data;
   return {
     ...order,
     payment: payments[0] ?? null,
     rejection: payment_rejections[0] ?? null,
     refund: refunds[0] ?? null,
+    outOfStock: supply_failures.length > 0,
   };
 }
 

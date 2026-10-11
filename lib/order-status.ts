@@ -1,4 +1,6 @@
 import type { Database } from "@/lib/supabase/database.types";
+// Relative, with its extension, so the tests can load this file directly.
+import { formatRupees } from "./format.ts";
 
 export type OrderStatus = Database["public"]["Enums"]["order_status"];
 
@@ -55,11 +57,19 @@ export function isExpired(
   return order.status === "awaiting_payment" && new Date(order.expires_at) <= now;
 }
 
+// A paid order numastore couldn't supply isn't being prepared: the customer
+// is owed their money, and is told so until the refund is recorded.
 export function customerOrderStatus(
-  order: { status: OrderStatus; expires_at: string },
+  order: { status: OrderStatus; expires_at: string; price: number; outOfStock: boolean },
   now: Date,
 ): { label: string; tone: StatusTone } {
   if (isExpired(order, now)) return { label: "Expired", tone: "plain" };
+  if (order.status === "paid" && order.outOfStock) {
+    return {
+      label: `This item is out of stock. Your refund of ${formatRupees(order.price)} is on its way.`,
+      tone: "warning",
+    };
+  }
   return { label: customerStatusLabel[order.status], tone: statusTone[order.status] };
 }
 
