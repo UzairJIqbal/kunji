@@ -62,3 +62,30 @@ export async function findOrderBySupplierNumber(supplierOrderNumber: string) {
   if (error) return null;
   return data?.orders.number ?? null;
 }
+
+// Every order at bought, waiting for the seller to paste what numastore
+// delivered. Oldest order first: it's the one the customer has waited
+// longest for.
+export async function listOrdersToDeliver() {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      `id, number, product_name, duration_days, activation_email,
+       plans (products (account_type)),
+       supplier_purchases!inner (supplier_order_number, created_at)`,
+    )
+    .eq("status", "bought")
+    .order("created_at", { ascending: true })
+    .limit(LIST_LIMIT);
+  if (error) throw new Error(`Couldn't load the delivery list: ${error.message}`);
+
+  // A bought order has exactly one purchase: the database won't move it to
+  // bought without one, and the inner join drops none.
+  return data.map(({ plans, supplier_purchases, ...order }) => ({
+    ...order,
+    accountType: plans.products.account_type,
+    purchase: supplier_purchases[0] ?? null,
+  }));
+}
+export type DeliverRow = Awaited<ReturnType<typeof listOrdersToDeliver>>[number];

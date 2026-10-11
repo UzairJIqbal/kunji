@@ -4,13 +4,15 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { listOrders } from "@/lib/data/orders";
-import { formatDays, formatPakistanTime, formatRupees } from "@/lib/format";
+import { type VaultListEntry, listVaultEntries } from "@/lib/data/vault";
+import { formatDays, formatPakistanDate, formatPakistanTime, formatRupees } from "@/lib/format";
 import { customerOrderStatus } from "@/lib/order-status";
+import { credentialKindLabel, daysLeft, vaultDates, vaultStanding, vaultStandingBadge } from "@/lib/vault";
 
 export const metadata: Metadata = { title: "Your account · Kunji" };
 
 // The proxy has already turned signed-out visitors away; this page only renders
-// for someone signed in. The vault is filled by a later phase.
+// for someone signed in.
 export default function AccountPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
@@ -34,9 +36,9 @@ export default function AccountPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Logins for your subscriptions are kept here, visible only to you.
         </p>
-        <p className="mt-3 rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-          Nothing in your vault yet. It fills when an order is delivered.
-        </p>
+        <Suspense fallback={<p className="mt-3 text-sm text-muted-foreground">Loading your vault…</p>}>
+          <Vault />
+        </Suspense>
       </section>
     </main>
   );
@@ -83,6 +85,84 @@ async function OrderList() {
               <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
                 <span className="font-mono">#{order.number}</span>
                 <span className="shrink-0">{formatPakistanTime(order.created_at)}</span>
+              </div>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+async function Vault() {
+  const entries = await listVaultEntries();
+
+  if (entries.length === 0) {
+    return (
+      <p className="mt-3 rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+        Nothing in your vault yet. It fills when an order is delivered.
+      </p>
+    );
+  }
+
+  // Read after the entries, so expiry is judged at this request's time.
+  const now = new Date();
+  const rows = entries.map((entry) => {
+    const { expiresAt } = vaultDates(entry.delivered_at, entry.orders.duration_days, entry.orders.warranty_days);
+    return { entry, expiresAt, standing: vaultStanding(expiresAt, now) };
+  });
+  const current = rows.filter((row) => row.standing !== "expired");
+  const expired = rows.filter((row) => row.standing === "expired");
+
+  return (
+    <>
+      {current.length > 0 ? (
+        <VaultList rows={current} now={now} />
+      ) : (
+        <p className="mt-3 rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+          Nothing current. Your expired subscriptions are below.
+        </p>
+      )}
+      {expired.length > 0 && (
+        <>
+          <h3 className="mt-6 text-sm font-semibold">Expired</h3>
+          <VaultList rows={expired} now={now} />
+        </>
+      )}
+    </>
+  );
+}
+
+function VaultList({
+  rows,
+  now,
+}: {
+  rows: { entry: VaultListEntry; expiresAt: Date; standing: ReturnType<typeof vaultStanding> }[];
+  now: Date;
+}) {
+  return (
+    <ul className="mt-3 divide-y rounded-lg border">
+      {rows.map(({ entry, expiresAt, standing }) => {
+        const badge = vaultStandingBadge[standing];
+        return (
+          <li key={entry.order_id}>
+            <Link
+              href={`/account/vault/${entry.orders.number}`}
+              className="block px-4 py-3 text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-medium text-primary">{entry.orders.product_name}</span>
+                <span className="shrink-0 text-muted-foreground">{credentialKindLabel[entry.kind]}</span>
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-3">
+                <StatusBadge tone={badge.tone} label={badge.label} />
+                <span className="shrink-0 text-muted-foreground">
+                  {standing === "expired"
+                    ? `Ended ${formatPakistanDate(expiresAt)}`
+                    : standing === "expiring_soon"
+                      ? `${formatDays(daysLeft(expiresAt, now))} left`
+                      : `Until ${formatPakistanDate(expiresAt)}`}
+                </span>
               </div>
             </Link>
           </li>

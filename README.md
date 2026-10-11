@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## The vault key
+
+Credentials in customers' vaults are encrypted with `VAULT_KEY`, and the app won't start without it. Make one with:
+
+```bash
+openssl rand -base64 32
+```
+
+Put it in `.env.local` as `VAULT_KEY=…` and **keep a copy in a password manager**. If the key is lost, every vault entry is lost with it: nothing can decrypt them, and each one would have to be delivered again. Never commit it, and use the same key everywhere the app runs against the same database.
+
 ## Getting Started
 
 First, run the development server:

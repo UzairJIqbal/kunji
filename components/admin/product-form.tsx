@@ -25,6 +25,7 @@ export type ProductValues = {
   category: string;
   description: string;
   setupInstructions: string;
+  warrantyWarning: string;
   accountType: AccountType | null;
   planNote: string;
   needsActivationEmail: boolean;
@@ -35,6 +36,7 @@ export const blankProduct: ProductValues = {
   category: "",
   description: "",
   setupInstructions: "",
+  warrantyWarning: "",
   // No default: the seller has to say what the customer actually gets.
   accountType: null,
   planNote: "",
@@ -130,6 +132,25 @@ export function ProductForm({
           {...invalidProps(f("setup"), errors.setupInstructions)}
         />
         <FieldError id={f("setup")} errors={errors.setupInstructions} />
+      </div>
+
+      <div>
+        <label htmlFor={f("warning")} className={labelClass}>
+          What voids the warranty{" "}
+          <span className="font-normal text-muted-foreground">
+            optional, shown above the login in the customer&apos;s vault
+          </span>
+        </label>
+        <textarea
+          id={f("warning")}
+          name="warrantyWarning"
+          defaultValue={initial.warrantyWarning}
+          rows={2}
+          maxLength={1000}
+          className={`mt-0.5 ${textareaClass}`}
+          {...invalidProps(f("warning"), errors.warrantyWarning)}
+        />
+        <FieldError id={f("warning")} errors={errors.warrantyWarning} />
       </div>
 
       <fieldset

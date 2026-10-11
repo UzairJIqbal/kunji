@@ -38,7 +38,8 @@ export async function getOrder(number: string) {
        payments (method, transaction_id, sender_number, created_at),
        payment_rejections (reason),
        refunds (amount, method, reference, sent_to, created_at),
-       supply_failures (created_at)`,
+       supply_failures (created_at),
+       vault_entries (delivered_at)`,
     )
     .eq("number", Number(number))
     // Moves made in one transaction share a time; the ID keeps their order.
@@ -53,13 +54,14 @@ export async function getOrder(number: string) {
   // order, but PostgREST hands them back as lists. Only whether the item was
   // out of stock reaches the customer: nothing from the supplier tables is
   // read here, and their policies would refuse it anyway.
-  const { payments, payment_rejections, refunds, supply_failures, ...order } = data;
+  const { payments, payment_rejections, refunds, supply_failures, vault_entries, ...order } = data;
   return {
     ...order,
     payment: payments[0] ?? null,
     rejection: payment_rejections[0] ?? null,
     refund: refunds[0] ?? null,
     outOfStock: supply_failures.length > 0,
+    inVault: vault_entries.length > 0,
   };
 }
 

@@ -50,6 +50,8 @@ export type QueueRow = Awaited<ReturnType<typeof listVerificationQueue>>[number]
 
 const orderNumberPattern = /^[1-9]\d{0,11}$/;
 const EVENT_LIMIT = 50;
+// The latest reveals are what matter; older ones stay in the table.
+const REVEAL_LIMIT = 20;
 
 export async function getAdminOrder(number: string) {
   if (!orderNumberPattern.test(number)) return null;
@@ -65,9 +67,11 @@ export async function getAdminOrder(number: string) {
                  payment_accounts (account_title, account_number, bank_name)),
        payment_rejections (reason),
        refunds (amount, method, reference, sent_to, created_at),
-       plans (product_id, plan_supplier_details (supplier_price, numastore_url)),
+       plans (product_id, products (account_type), plan_supplier_details (supplier_price, numastore_url)),
        supplier_purchases (supplier_order_number, amount_paid, created_at),
-       supply_failures (created_at)`,
+       supply_failures (created_at),
+       vault_entries (kind, delivered_at, delivered_by),
+       vault_reveals (id, revealed_by, created_at)`,
     )
     .eq("number", Number(number))
     // Moves made in one transaction share a time; the ID keeps their order.
@@ -76,13 +80,25 @@ export async function getAdminOrder(number: string) {
     .order("created_at", { referencedTable: "payments", ascending: false })
     .limit(1, { referencedTable: "payments" })
     .limit(1, { referencedTable: "supplier_purchases" })
+    .order("created_at", { referencedTable: "vault_reveals", ascending: false })
+    .limit(REVEAL_LIMIT, { referencedTable: "vault_reveals" })
     .maybeSingle();
   if (error) throw new Error(`Couldn't load the order: ${error.message}`);
   if (!data) return null;
 
   // One of each at most (each table's key is the order, and an order is
   // bought once), but PostgREST hands them back as lists.
-  const { payments, payment_rejections, refunds, plans, supplier_purchases, supply_failures, ...order } = data;
+  const {
+    payments,
+    payment_rejections,
+    refunds,
+    plans,
+    supplier_purchases,
+    supply_failures,
+    vault_entries,
+    vault_reveals,
+    ...order
+  } = data;
   return {
     ...order,
     payment: payments[0] ?? null,
@@ -92,6 +108,9 @@ export async function getAdminOrder(number: string) {
     supplier: plans.plan_supplier_details,
     purchase: supplier_purchases[0] ?? null,
     supplyFailure: supply_failures[0] ?? null,
+    accountType: plans.products.account_type,
+    vault: vault_entries[0] ?? null,
+    reveals: vault_reveals,
   };
 }
 
