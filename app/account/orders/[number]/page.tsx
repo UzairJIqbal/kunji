@@ -6,11 +6,13 @@ import { LiveOrders } from "@/components/live-orders";
 import { StatusBadge } from "@/components/status-badge";
 import { primaryButtonClass, textLinkClass } from "@/components/store/fields";
 import { PaymentForm } from "@/components/store/payment-form";
+import { ReviewSection } from "@/components/store/review-section";
 import { WarrantySection } from "@/components/store/warranty-section";
 import { submitProof } from "@/lib/actions/checkout";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { listPayableAccounts } from "@/lib/data/checkout";
 import { getOrder } from "@/lib/data/orders";
+import { getOrderReview } from "@/lib/data/reviews";
 import { listOrderTickets } from "@/lib/data/tickets";
 import { whatsappNumber } from "@/lib/env";
 import { formatDays, formatPakistanTime, formatRupees, formatWarranty } from "@/lib/format";
@@ -45,9 +47,15 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
   const status = customerOrderStatus(order, now);
   const awaiting = order.status === "awaiting_payment";
   const expired = isExpired(order, now);
-  const [accounts, tickets] = await Promise.all([
+  // Delivered at some point, refunded since or not: the same test the
+  // database applies to a new review.
+  const reviewable =
+    order.deliveredAt !== null &&
+    (order.status === "delivered" || order.status === "replaced" || order.status === "refunded");
+  const [accounts, tickets, review] = await Promise.all([
     awaiting ? listPayableAccounts() : [],
     order.deliveredAt ? listOrderTickets(order.id) : [],
+    reviewable ? getOrderReview(order.id) : null,
   ]);
   const help = whatsappLink(whatsappNumber(), `Hi, about my Kunji order #${order.number}`);
 
@@ -119,6 +127,8 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
           help={help}
         />
       )}
+
+      {reviewable && <ReviewSection orderId={order.id} review={review} />}
 
       {order.status === "rejected" && order.rejection && (
         <section aria-labelledby="rejected-heading" className="mt-6 rounded-lg border border-danger p-4 text-sm">

@@ -3,6 +3,7 @@ import "server-only";
 import { connection } from "next/server";
 import { cache } from "react";
 import { paymentMethods, type PaymentMethod } from "@/lib/catalogue";
+import { type Rating, ratingAverage } from "@/lib/reviews";
 import { createPublicSupabase } from "@/lib/supabase/public";
 
 // Prices are read on every request, never cached into a page: connection()
@@ -31,7 +32,7 @@ export async function listCatalogue() {
   const { data, error } = await supabase
     .from("products")
     .select(
-      `slug, name, category, account_type, image_path, sold_out, created_at,
+      `id, slug, name, category, account_type, image_path, sold_out, created_at,
        plans!inner (duration_days, warranty_days, sell_price)`,
     )
     .order("category")
@@ -39,7 +40,59 @@ export async function listCatalogue() {
     .limit(CATALOGUE_LIMIT)
     .limit(PLANS_PER_PRODUCT_LIMIT, { referencedTable: "plans" });
   if (error) throw new Error(`Couldn't load the catalogue: ${error.message}`);
-  return data.map((product) => ({ ...product, plans: priced(product.plans) }));
+  const ratings = await readRatings(data.map((product) => product.id));
+  return data.map((product) => ({
+    ...product,
+    plans: priced(product.plans),
+    rating: ratings.get(product.id) ?? NO_RATING,
+  }));
+}
+
+// ───────────────────────────── Ratings ─────────────────────────────
+
+const NO_RATING: Rating = { average: null, count: 0 };
+
+// Counted from the visible reviews as this request reads them (the view
+// leaves hidden ones out), then averaged here to one decimal, never up.
+async function readRatings(productIds: string[]): Promise<Map<string, Rating>> {
+  if (productIds.length === 0) return new Map();
+  const supabase = createPublicSupabase();
+  const { data, error } = await supabase
+    .from("product_ratings")
+    .select("product_id, review_count, rating_total")
+    .in("product_id", productIds)
+    .limit(productIds.length);
+  if (error) throw new Error(`Couldn't load the ratings: ${error.message}`);
+  return new Map(
+    data.flatMap(({ product_id, review_count, rating_total }) =>
+      product_id === null || !review_count
+        ? []
+        : [[product_id, { average: ratingAverage(rating_total ?? 0, review_count), count: review_count }]],
+    ),
+  );
+}
+
+const REVIEW_LIMIT = 50;
+
+// A product's visible reviews, newest first: the policy hides the rest from
+// the public. The plan is the one the reviewer bought, copied when they wrote.
+export async function listProductReviews(productId: string) {
+  await connection();
+  const supabase = createPublicSupabase();
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("id, reviewer_name, rating, comment, duration_days, created_at")
+    .eq("product_id", productId)
+    .order("created_at", { ascending: false })
+    .limit(REVIEW_LIMIT);
+  if (error) throw new Error(`Couldn't load the reviews: ${error.message}`);
+  return data;
+}
+export type ProductReview = Awaited<ReturnType<typeof listProductReviews>>[number];
+
+export async function getProductRating(productId: string): Promise<Rating> {
+  await connection();
+  return (await readRatings([productId])).get(productId) ?? NO_RATING;
 }
 
 const slugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -54,7 +107,7 @@ export const getProduct = cache(async (slug: string) => {
   const { data, error } = await supabase
     .from("products")
     .select(
-      `slug, name, category, description, account_type, plan_note,
+      `id, slug, name, category, description, account_type, plan_note,
        needs_activation_email, image_path, sold_out, created_at,
        plans!inner (id, duration_days, warranty_days, sell_price)`,
     )

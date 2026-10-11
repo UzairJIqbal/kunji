@@ -1,6 +1,8 @@
 // Fails if any table outside Supabase's own schemas has row-level security
 // off, if a vault entry can be inserted without going through delivery, or if
-// a customer can open a ticket on an order whose warranty has ended.
+// a customer can open a ticket on an order whose warranty has ended, or if a
+// review can be written by anyone but a delivered order's own customer or
+// changed by anyone but its author.
 // Runs from the terminal now and in CI later, so it talks to Postgres
 // directly rather than through the MCP. Nothing it does is kept: the insert
 // attempt runs in a transaction that is always rolled back.
@@ -149,13 +151,97 @@ try {
     throw new RolledBack();
   });
 } catch (error) {
+  if (!(error instanceof RolledBack)) {
+    await sql.end();
+    throw error;
+  }
+}
+
+if (ticketOutcome !== "ok") {
+  await sql.end();
+  console.error(`\nFAIL: ticket on an order past its warranty: ${ticketOutcome}`);
+  process.exit(1);
+}
+console.log("PASS: a ticket on an order past its warranty is refused by the database.");
+
+// ───────────────────────────── Reviews ─────────────────────────────
+
+// Straight into the table, the way a forged request or a seed script would:
+// SQL with no signed-in user is refused, a verifying order's own customer is
+// refused, a delivered order's customer gets one review and no second, and the
+// seller (as the database owner, so no policy or grant is in the way, only the
+// trigger) can't change its stars. Each attempt must end exactly as expected;
+// missing an order to try it on fails too.
+const reviewFailures: string[] = [];
+try {
+  await sql.begin(async (tx) => {
+    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
+    const [verifying] = await tx<{ id: string; customer_id: string }[]>`
+      select id, customer_id from public.orders where status = 'verifying' limit 1
+    `;
+    const [delivered] = await tx<{ id: string; customer_id: string }[]>`
+      select o.id, o.customer_id
+      from public.orders o
+      join public.vault_entries v on v.order_id = o.id
+      where o.status in ('delivered', 'replaced')
+        and not exists (select 1 from public.reviews r where r.order_id = o.id)
+      limit 1
+    `;
+    if (!admin || !verifying || !delivered) {
+      reviewFailures.push(
+        `could not run: needs an admin, a verifying order and an unreviewed delivered order (admin ${admin ? "found" : "missing"}, verifying ${verifying ? "found" : "missing"}, delivered ${delivered ? "found" : "missing"})`,
+      );
+      throw new RolledBack();
+    }
+
+    const signIn = (sub: string) =>
+      tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub, role: "authenticated" })}, true)`;
+    // null when it ended as expected, otherwise what went wrong.
+    const attempt = async (label: string, expected: string | null, run: (sp: postgres.TransactionSql) => postgres.PendingQuery<postgres.Row[]>) => {
+      try {
+        await tx.savepoint(run);
+        if (expected !== null) reviewFailures.push(`${label}: ACCEPTED`);
+      } catch (error) {
+        const code = error instanceof postgres.PostgresError ? error.code : "unknown";
+        if (code !== expected) reviewFailures.push(`${label}: ${expected === null ? "refused" : "refused, but not as expected"} (${code})`);
+      }
+    };
+
+    await attempt("a review inserted by SQL with no signed-in user", "42501", (sp) => sp`
+      insert into public.reviews (order_id, customer_id, rating)
+      values (${delivered.id}, ${delivered.customer_id}, 5)
+    `);
+
+    await tx`set local role authenticated`;
+    await signIn(verifying.customer_id);
+    await attempt("a review on a verifying order", "KJ011", (sp) => sp`
+      insert into public.reviews (order_id, customer_id, rating)
+      values (${verifying.id}, ${verifying.customer_id}, 5)
+    `);
+
+    await signIn(delivered.customer_id);
+    const insertDelivered = (sp: postgres.TransactionSql) => sp`
+      insert into public.reviews (order_id, customer_id, rating)
+      values (${delivered.id}, ${delivered.customer_id}, 4)
+    `;
+    await attempt("the first review on a delivered order", null, insertDelivered);
+    await attempt("a second review on the same order", "23505", insertDelivered);
+
+    await tx`reset role`;
+    await signIn(admin.id);
+    await attempt("the seller changing a review's stars", "42501", (sp) => sp`
+      update public.reviews set rating = 1 where order_id = ${delivered.id}
+    `);
+    throw new RolledBack();
+  });
+} catch (error) {
   if (!(error instanceof RolledBack)) throw error;
 } finally {
   await sql.end();
 }
 
-if (ticketOutcome !== "ok") {
-  console.error(`\nFAIL: ticket on an order past its warranty: ${ticketOutcome}`);
+if (reviewFailures.length > 0) {
+  console.error(`\nFAIL: reviews:\n  ${reviewFailures.join("\n  ")}`);
   process.exit(1);
 }
-console.log("PASS: a ticket on an order past its warranty is refused by the database.");
+console.log("PASS: only a delivered order's own customer can review it, once, and only they can change it.");

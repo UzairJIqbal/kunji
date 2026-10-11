@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { AccountType } from "@/lib/catalogue";
+import type { Rating } from "@/lib/reviews";
 import type { PlanSummary } from "@/lib/storefront";
 import { HonestFacts, Price, ProductBadges, ProductImage } from "./product-parts";
+import { RatingSummary } from "./stars";
 
 export type CardProduct = {
   slug: string;
@@ -11,6 +13,7 @@ export type CardProduct = {
   sold_out: boolean;
   isNew: boolean;
   summary: PlanSummary;
+  rating: Rating;
 };
 
 // The whole card is one tap target. The facts are on the card itself, so
@@ -31,6 +34,7 @@ export function ProductCard({ product }: { product: CardProduct }) {
           <div className="mt-1">
             <Price summary={product.summary} />
           </div>
+          <RatingSummary rating={product.rating} />
         </div>
       </div>
       <div className="mt-3 border-t pt-3">

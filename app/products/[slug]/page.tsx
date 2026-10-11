@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { HonestFacts, Price, ProductBadges, ProductImage } from "@/components/store/product-parts";
+import { RatingSummary, Stars } from "@/components/store/stars";
 import { accountTypeLabel } from "@/lib/catalogue";
-import { getProduct } from "@/lib/data/storefront";
-import { formatDays, formatRupees, formatWarranty } from "@/lib/format";
+import { getProduct, getProductRating, listProductReviews } from "@/lib/data/storefront";
+import { formatDays, formatPakistanDate, formatRupees, formatWarranty } from "@/lib/format";
 import { productImageUrl } from "@/lib/product-image";
+import { reviewerLabel } from "@/lib/reviews";
 import { DELIVERY_SENTENCE, isNew, summarisePlans } from "@/lib/storefront";
 
 // The title is what a shared link shows. No price in it: a preview is cached
@@ -51,6 +53,7 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
   const summary = product && summarisePlans(product.plans);
   // Hidden, never listed, or nothing to buy: to a customer these are the same.
   if (!product || !summary) notFound();
+  const [rating, reviews] = await Promise.all([getProductRating(product.id), listProductReviews(product.id)]);
 
   const extra = [
     ...(product.needs_activation_email
@@ -76,6 +79,9 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
             <Price summary={summary} />
             <ProductBadges isNew={isNew(new Date(product.created_at), new Date())} soldOut={product.sold_out} />
           </div>
+          <a href="#reviews-heading" className="inline-flex min-h-11 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            <RatingSummary rating={rating} />
+          </a>
         </div>
       </div>
 
@@ -125,6 +131,33 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
             </li>
           ))}
         </ul>
+      </section>
+
+      <section aria-labelledby="reviews-heading" className="mt-8">
+        <h2 id="reviews-heading" className="scroll-mt-4 text-base font-semibold">
+          Reviews
+        </h2>
+        <div className="mt-1">
+          <RatingSummary rating={rating} />
+        </div>
+        {reviews.length > 0 && (
+          <ul className="mt-3 divide-y border-y">
+            {reviews.map((review) => (
+              <li key={review.id} className="py-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <span className="font-medium">{reviewerLabel(review.reviewer_name)}</span>
+                  <Stars rating={review.rating} />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Bought {formatDays(review.duration_days)}, reviewed {formatPakistanDate(review.created_at)}
+                </p>
+                {review.comment && (
+                  <p className="mt-1.5 max-w-prose whitespace-pre-line break-words">{review.comment}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </article>
   );

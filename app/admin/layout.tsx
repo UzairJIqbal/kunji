@@ -14,6 +14,9 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
         <Link href="/admin/tickets" className={linkClass}>
           Tickets
         </Link>
+        <Link href="/admin/reviews" className={linkClass}>
+          Reviews
+        </Link>
         <Link href="/admin/products" className={linkClass}>
           Products
         </Link>

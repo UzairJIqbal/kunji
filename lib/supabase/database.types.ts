@@ -522,6 +522,69 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          customer_id: string
+          duration_days: number
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          order_id: string
+          product_id: string
+          rating: number
+          reviewer_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string
+          created_at?: string
+          customer_id: string
+          duration_days: number
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          order_id: string
+          product_id: string
+          rating: number
+          reviewer_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          customer_id?: string
+          duration_days?: number
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          order_id?: string
+          product_id?: string
+          rating?: number
+          reviewer_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_customer_id_fkey"
+            columns: ["order_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           away: boolean
@@ -817,7 +880,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_ratings: {
+        Row: {
+          product_id: string | null
+          rating_total: number | null
+          review_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_payment: { Args: { p_order_id: string }; Returns: undefined }
@@ -843,6 +921,19 @@ export type Database = {
           p_order_id: string
         }
         Returns: undefined
+      }
+      hide_review: {
+        Args: { p_reason: string; p_review_id: string }
+        Returns: undefined
+      }
+      leave_review: {
+        Args: {
+          p_comment: string
+          p_order_id: string
+          p_rating: number
+          p_reviewer_name?: string
+        }
+        Returns: string
       }
       mark_order_bought: {
         Args: {
