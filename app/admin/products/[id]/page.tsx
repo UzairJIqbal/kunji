@@ -91,6 +91,7 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
               category: product.category,
               description: product.description,
               setupInstructions: product.setup_instructions,
+              warrantyWarning: product.warranty_warning,
               accountType: product.account_type,
               planNote: product.plan_note ?? "",
               needsActivationEmail: product.needs_activation_email,

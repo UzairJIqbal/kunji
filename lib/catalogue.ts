@@ -72,6 +72,8 @@ export const productSchema = z.object({
   category: requiredText("Category", 60),
   description: optionalText("Short description", 600),
   setupInstructions: optionalText("Setup instructions", 4000),
+  // Shown above the credential in every vault entry, in the seller's words.
+  warrantyWarning: optionalText("What voids the warranty", 1000),
   accountType: z.enum(accountTypes, { error: "Account type is required" }),
   // Blank means there's no note, stored as nothing rather than an empty string.
   planNote: optionalText("Region or plan note", 300).transform((note) => note || null),

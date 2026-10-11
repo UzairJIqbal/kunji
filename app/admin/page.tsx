@@ -3,15 +3,17 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ActionButton } from "@/components/admin/action-button";
 import { BoughtForm, WaitingClock } from "@/components/admin/buying-forms";
+import { DeliverForm } from "@/components/admin/deliver-form";
 import { FindOrder } from "@/components/admin/find-order";
 import { ApproveButton, AwaySwitch, RefundForm, RejectForm } from "@/components/admin/verification-forms";
 import { LiveOrders } from "@/components/live-orders";
 import { CopyButton } from "@/components/store/copy-button";
 import { cannotSupply, markBought, refundUnsuppliedOrder } from "@/lib/actions/buying";
 import { approvePayment, rejectPayment, switchAwayOff, switchAwayOn } from "@/lib/actions/verification";
+import { deliverOrder } from "@/lib/actions/vault";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { viewerSeesAdminRows } from "@/lib/data/admin";
-import { type BuyRow, listOrdersToBuy } from "@/lib/data/buying";
+import { type BuyRow, type DeliverRow, listOrdersToBuy, listOrdersToDeliver } from "@/lib/data/buying";
 import { getOrderStatusCounts } from "@/lib/data/orders";
 import { type QueueRow, getStoreSettings, listVerificationQueue } from "@/lib/data/verification";
 import { formatDays, formatPakistanTime, formatRupees } from "@/lib/format";
@@ -154,11 +156,12 @@ function QueueItem({ row }: { row: QueueRow }) {
   );
 }
 
-// Paid orders, split by whether numastore could supply them. The queue's
-// live listener re-reads the whole page, so these update with it.
+// Paid orders, split by whether numastore could supply them, then bought
+// orders waiting for their credential. The queue's live listener re-reads the
+// whole page, so these update with it.
 async function BuyLists() {
   if (!(await viewerSeesAdminRows())) return null;
-  const { toBuy, toRefund } = await listOrdersToBuy();
+  const [{ toBuy, toRefund }, toDeliver] = await Promise.all([listOrdersToBuy(), listOrdersToDeliver()]);
   // Read after the data: the clocks start from when this page was made.
   const renderedAt = new Date().toISOString();
   return (
@@ -175,6 +178,23 @@ async function BuyLists() {
           <ol className="mt-1.5 divide-y rounded-md border">
             {toBuy.map((row) => (
               <BuyItem key={row.id} row={row} renderedAt={renderedAt} />
+            ))}
+          </ol>
+        )}
+      </section>
+
+      <section aria-labelledby="deliver-heading">
+        <h2 id="deliver-heading" className={headingClass}>
+          To deliver: paste what numastore sent
+        </h2>
+        {toDeliver.length === 0 ? (
+          <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+            Nothing to deliver. Orders show up here once they&apos;re bought.
+          </p>
+        ) : (
+          <ol className="mt-1.5 divide-y rounded-md border">
+            {toDeliver.map((row) => (
+              <DeliverItem key={row.id} row={row} />
             ))}
           </ol>
         )}
@@ -256,6 +276,38 @@ function BuyItem({ row, renderedAt }: { row: BuyRow; renderedAt: string }) {
           label="numastore can't supply it"
           pendingLabel="Marking sold out…"
         />
+      </div>
+    </li>
+  );
+}
+
+function DeliverItem({ row }: { row: DeliverRow }) {
+  return (
+    <li className="p-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <Link
+          href={`/admin/orders/${row.number}`}
+          className="font-mono font-medium underline-offset-4 hover:underline"
+        >
+          #{row.number}
+        </Link>
+        {row.purchase && (
+          <span className="text-xs text-muted-foreground">
+            numastore <span className="font-mono">{row.purchase.supplier_order_number}</span>
+          </span>
+        )}
+      </div>
+      <p className="truncate">
+        {row.product_name}, {formatDays(row.duration_days)}
+        {row.activation_email && (
+          <span className="text-muted-foreground">
+            {" "}
+            for <span className="font-mono">{row.activation_email}</span>
+          </span>
+        )}
+      </p>
+      <div className="mt-1.5">
+        <DeliverForm action={deliverOrder.bind(null, row.id)} accountType={row.accountType} />
       </div>
     </li>
   );

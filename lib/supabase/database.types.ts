@@ -355,6 +355,7 @@ export type Database = {
           setup_instructions: string
           slug: string
           sold_out: boolean
+          warranty_warning: string
         }
         Insert: {
           account_type: Database["public"]["Enums"]["account_type"]
@@ -370,6 +371,7 @@ export type Database = {
           setup_instructions?: string
           slug: string
           sold_out?: boolean
+          warranty_warning?: string
         }
         Update: {
           account_type?: Database["public"]["Enums"]["account_type"]
@@ -385,6 +387,7 @@ export type Database = {
           setup_instructions?: string
           slug?: string
           sold_out?: boolean
+          warranty_warning?: string
         }
         Relationships: []
       }
@@ -511,6 +514,86 @@ export type Database = {
           },
         ]
       }
+      vault_entries: {
+        Row: {
+          credential: string
+          customer_id: string
+          delivered_at: string
+          delivered_by: string | null
+          kind: Database["public"]["Enums"]["credential_kind"]
+          order_id: string
+          setup_instructions: string
+          warranty_warning: string
+        }
+        Insert: {
+          credential: string
+          customer_id: string
+          delivered_at?: string
+          delivered_by?: string | null
+          kind: Database["public"]["Enums"]["credential_kind"]
+          order_id: string
+          setup_instructions: string
+          warranty_warning: string
+        }
+        Update: {
+          credential?: string
+          customer_id?: string
+          delivered_at?: string
+          delivered_by?: string | null
+          kind?: Database["public"]["Enums"]["credential_kind"]
+          order_id?: string
+          setup_instructions?: string
+          warranty_warning?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_entries_order_id_customer_id_fkey"
+            columns: ["order_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id", "customer_id"]
+          },
+        ]
+      }
+      vault_reveals: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: number
+          order_id: string
+          revealed_by: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: never
+          order_id: string
+          revealed_by: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: never
+          order_id?: string
+          revealed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_reveals_order_id_customer_id_fkey"
+            columns: ["order_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "vault_reveals_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vault_entries"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -527,6 +610,14 @@ export type Database = {
           p_warranty_days: number
         }
         Returns: string
+      }
+      deliver_order: {
+        Args: {
+          p_credential: string
+          p_kind: Database["public"]["Enums"]["credential_kind"]
+          p_order_id: string
+        }
+        Returns: undefined
       }
       mark_order_bought: {
         Args: {
@@ -575,6 +666,13 @@ export type Database = {
         Args: { p_order_id: string; p_reason: string }
         Returns: undefined
       }
+      reveal_credential: {
+        Args: { p_order_id: string }
+        Returns: {
+          credential: string
+          kind: Database["public"]["Enums"]["credential_kind"]
+        }[]
+      }
       submit_payment_proof: {
         Args: {
           p_order_id: string
@@ -600,6 +698,7 @@ export type Database = {
     }
     Enums: {
       account_type: "own_account" | "shared_slot" | "email_invite"
+      credential_kind: "login" | "licence_key" | "invite"
       order_status:
         | "awaiting_payment"
         | "verifying"
@@ -743,6 +842,7 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["own_account", "shared_slot", "email_invite"],
+      credential_kind: ["login", "licence_key", "invite"],
       order_status: [
         "awaiting_payment",
         "verifying",

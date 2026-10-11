@@ -4,11 +4,14 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ActionButton } from "@/components/admin/action-button";
 import { BoughtForm } from "@/components/admin/buying-forms";
+import { DeliverForm } from "@/components/admin/deliver-form";
 import { NotAdmin } from "@/components/admin/not-admin";
 import { ApproveButton, RefundForm, RejectForm } from "@/components/admin/verification-forms";
 import { LiveOrders } from "@/components/live-orders";
+import { RevealCredential } from "@/components/vault/reveal-credential";
 import { StatusBadge } from "@/components/status-badge";
 import { cannotSupply, markBought, refundUnsuppliedOrder } from "@/lib/actions/buying";
+import { deliverOrder, revealCredential } from "@/lib/actions/vault";
 import { approvePayment, refundRejectedOrder, rejectPayment } from "@/lib/actions/verification";
 import { priceDifference } from "@/lib/buying";
 import { paymentMethodLabel } from "@/lib/catalogue";
@@ -17,6 +20,7 @@ import { describeActors, getAdminOrder } from "@/lib/data/verification";
 import { formatDays, formatPakistanTime, formatRupees, formatWarranty } from "@/lib/format";
 import { adminStatusLabel, statusTone } from "@/lib/order-status";
 import { whatsappLink } from "@/lib/storefront";
+import { credentialKindLabel } from "@/lib/vault";
 import { paidIntoLabel } from "@/lib/verification";
 
 export async function generateMetadata({ params }: PageProps<"/admin/orders/[number]">): Promise<Metadata> {
@@ -42,9 +46,14 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
   if (!order) notFound();
 
   const actors = await describeActors(
-    order.order_events.map((event) => event.actor_id),
+    [
+      ...order.order_events.map((event) => event.actor_id),
+      ...order.reveals.map((reveal) => reveal.revealed_by),
+      order.vault?.delivered_by ?? null,
+    ],
     order.customer_id,
   );
+  const named = (id: string | null) => (id ? (actors.get(id) ?? id) : "the database");
   const profile = order.customer_profiles;
 
   const details = [
@@ -276,6 +285,51 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
         </section>
       )}
 
+      {order.status === "bought" && (
+        <section aria-labelledby="deliver-heading" className="mt-4">
+          <h2 id="deliver-heading" className={headingClass}>
+            Deliver: paste what numastore sent
+          </h2>
+          <div className="mt-1.5">
+            <DeliverForm action={deliverOrder.bind(null, order.id)} accountType={order.accountType} />
+          </div>
+        </section>
+      )}
+
+      {order.vault && (
+        <section aria-labelledby="vault-heading" className="mt-4">
+          <h2 id="vault-heading" className={headingClass}>
+            Vault
+          </h2>
+          <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3">
+            <dt className="text-muted-foreground">Kind</dt>
+            <dd>{credentialKindLabel[order.vault.kind]}</dd>
+            <dt className="text-muted-foreground">Delivered</dt>
+            <dd>
+              {formatPakistanTime(order.vault.delivered_at)}
+              <span className="text-muted-foreground"> by {named(order.vault.delivered_by)}</span>
+            </dd>
+          </dl>
+          <div className="mt-1.5 max-w-md">
+            {/* Recorded like the customer's: the seller's look is on the list below. */}
+            <RevealCredential reveal={revealCredential.bind(null, order.id)} compact />
+          </div>
+          <h3 className={`mt-3 ${headingClass}`}>Reveals, latest first</h3>
+          {order.reveals.length === 0 ? (
+            <p className="mt-1 text-muted-foreground">Not revealed yet.</p>
+          ) : (
+            <ol className="mt-1 divide-y border-y">
+              {order.reveals.map((reveal) => (
+                <li key={reveal.id} className="flex flex-wrap justify-between gap-x-3 py-1">
+                  <span>{named(reveal.revealed_by)}</span>
+                  <span className="text-muted-foreground">{formatPakistanTime(reveal.created_at)}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
+
       <section aria-labelledby="timeline-heading" className="mt-5">
         <h2 id="timeline-heading" className={headingClass}>
           Timeline
@@ -288,7 +342,7 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
                 <span className="font-medium">{adminStatusLabel[event.to_status]}</span>
                 <span className="text-muted-foreground">
                   {" "}
-                  by {event.actor_id ? (actors.get(event.actor_id) ?? event.actor_id) : "the database"}
+                  by {named(event.actor_id)}
                 </span>
               </span>
               <span className="text-muted-foreground">{formatPakistanTime(event.created_at)}</span>

@@ -26,7 +26,7 @@ export async function getProductForAdmin(productId: string) {
   const { data, error } = await supabase
     .from("products")
     .select(
-      `id, slug, name, category, description, setup_instructions, account_type,
+      `id, slug, name, category, description, setup_instructions, warranty_warning, account_type,
        plan_note, needs_activation_email, image_path, active, sold_out,
        plans (id, duration_days, warranty_days, sell_price,
          plan_supplier_details (supplier_price, margin, numastore_url, price_checked_at))`,

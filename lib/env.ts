@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseVaultKey } from "./vault-crypto";
 
 // Public values are read with literal `process.env.NEXT_PUBLIC_*` so Next can
 // inline them into the browser bundle; a dynamic lookup would come back empty.
@@ -24,6 +25,18 @@ const serverSchema = z.object({
   // Where links in the ping point. Set here rather than taken from the request,
   // so a forged Host header can't put someone else's link on the seller's phone.
   SITE_URL: z.url({ protocol: /^https?$/ }),
+  // Encrypts every credential in the vault. Checked here so the app refuses
+  // to start without it; only lib/vault-crypto.ts ever reads it. The message
+  // is the key parser's own, which never repeats the value.
+  VAULT_KEY: z.string({ error: "VAULT_KEY is not set" }).check((ctx) => {
+    try {
+      parseVaultKey(ctx.value);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "VAULT_KEY is malformed";
+      // input is left blank so the key never lands in the issue itself.
+      ctx.issues.push({ code: "custom", input: "", message });
+    }
+  }),
 });
 
 function fail(error: z.ZodError): never {
@@ -49,6 +62,7 @@ function parseServerEnv() {
     NTFY_URL: process.env.NTFY_URL,
     NTFY_TOPIC: process.env.NTFY_TOPIC,
     SITE_URL: process.env.SITE_URL,
+    VAULT_KEY: process.env.VAULT_KEY,
   });
   if (!parsed.success) fail(parsed.error);
   return parsed.data;

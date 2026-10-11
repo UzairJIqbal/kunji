@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LiveOrders } from "@/components/live-orders";
 import { StatusBadge } from "@/components/status-badge";
-import { textLinkClass } from "@/components/store/fields";
+import { primaryButtonClass, textLinkClass } from "@/components/store/fields";
 import { PaymentForm } from "@/components/store/payment-form";
 import { submitProof } from "@/lib/actions/checkout";
 import { paymentMethodLabel } from "@/lib/catalogue";
@@ -86,6 +86,19 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
           <StatusBadge tone={status.tone} label={status.label} />
         </div>
       </header>
+
+      {/* Appears the moment the seller delivers: the live listener refreshes
+          the page when the order moves to delivered. */}
+      {order.inVault && (
+        <section aria-labelledby="vault-heading" className="mt-6 rounded-lg border bg-card p-4">
+          <h2 id="vault-heading" className="text-base font-semibold">
+            Delivered to your vault
+          </h2>
+          <Link href={`/account/vault/${order.number}`} className={`mt-3 ${primaryButtonClass}`}>
+            Open in vault
+          </Link>
+        </section>
+      )}
 
       {order.status === "rejected" && order.rejection && (
         <section aria-labelledby="rejected-heading" className="mt-6 rounded-lg border border-danger p-4 text-sm">
