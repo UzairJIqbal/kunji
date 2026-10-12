@@ -88,6 +88,29 @@ export type Database = {
           },
         ]
       }
+      order_planned_margins: {
+        Row: {
+          margin: number
+          order_id: string
+        }
+        Insert: {
+          margin: number
+          order_id: string
+        }
+        Update: {
+          margin?: number
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_planned_margins_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_status_moves: {
         Row: {
           from_status: Database["public"]["Enums"]["order_status"]
@@ -1008,6 +1031,50 @@ export type Database = {
           p_ticket_id: string
         }
         Returns: undefined
+      }
+      report_orders: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          duration_days: number
+          number: number
+          placed_at: string
+          price: number
+          product_name: string
+          refund: number
+          replacement_cost: number
+          status: Database["public"]["Enums"]["order_status"]
+          supplier_cost: number
+        }[]
+      }
+      report_products: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          claim_replacements: number
+          delivered: number
+          out_of_stock_refund_amount: number
+          out_of_stock_refunds: number
+          paid_replacement_cost: number
+          paid_replacements: number
+          planned_margin: number
+          product_id: string
+          product_name: string
+          rejected_refund_amount: number
+          rejected_refunds: number
+          revenue: number
+          supplier_cost: number
+          warranty_refund_amount: number
+          warranty_refunds: number
+        }[]
+      }
+      report_waiting_times: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          median_seconds: number
+          orders: number
+          over_30_minutes: number
+          slowest_seconds: number
+          step: string
+        }[]
       }
       reveal_credential: {
         Args: { p_order_id: string }

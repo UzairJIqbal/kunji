@@ -23,6 +23,9 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
         <Link href="/admin/payment-accounts" className={linkClass}>
           Payment accounts
         </Link>
+        <Link href="/admin/reports" className={linkClass}>
+          Reports
+        </Link>
       </nav>
       {children}
     </div>

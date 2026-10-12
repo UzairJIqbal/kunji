@@ -164,6 +164,67 @@ if (ticketOutcome !== "ok") {
 }
 console.log("PASS: a ticket on an order past its warranty is refused by the database.");
 
+// ───────────────────────────── Reports ─────────────────────────────
+
+// A customer calling each report function directly is refused for permission,
+// and reads no planned margin. The seller, the same way, gets rows from each
+// that has any, so the refusal is about who's asking, not a function that
+// refuses everyone. No customer or admin to try it with fails.
+const reportFailures: string[] = [];
+try {
+  await sql.begin(async (tx) => {
+    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
+    const [customer] = await tx<{ id: string }[]>`
+      select o.customer_id as id from public.orders o
+      where not exists (select 1 from public.admins a where a.clerk_user_id = o.customer_id)
+      limit 1
+    `;
+    if (!admin || !customer) {
+      reportFailures.push(
+        `could not run: needs an admin and a customer with an order (admin ${admin ? "found" : "missing"}, customer ${customer ? "found" : "missing"})`,
+      );
+      throw new RolledBack();
+    }
+
+    await tx`set local role authenticated`;
+    const signIn = (sub: string) =>
+      tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub, role: "authenticated" })}, true)`;
+    const reports = ["report_products", "report_waiting_times", "report_orders"] as const;
+    const call = (sp: postgres.TransactionSql, fn: (typeof reports)[number]) => sp`select * from ${sp("public")}.${sp(fn)}()`;
+
+    await signIn(customer.id);
+    for (const fn of reports) {
+      try {
+        await tx.savepoint((sp) => call(sp, fn));
+        reportFailures.push(`a customer calling ${fn}: ACCEPTED`);
+      } catch (error) {
+        const code = error instanceof postgres.PostgresError ? error.code : "unknown";
+        if (code !== "42501") reportFailures.push(`a customer calling ${fn}: refused, but not for permission (${code})`);
+      }
+    }
+    const [margins] = await tx<{ n: number }[]>`select count(*)::int as n from public.order_planned_margins`;
+    if (margins.n !== 0) reportFailures.push(`a customer read ${margins.n} planned margins`);
+
+    await signIn(admin.id);
+    const [orders] = await tx<{ n: number }[]>`select count(*)::int as n from public.report_orders()`;
+    const [all] = await tx<{ n: number }[]>`select count(*)::int as n from public.orders`;
+    if (orders.n !== all.n) reportFailures.push(`the seller's all-time report_orders returned ${orders.n} of ${all.n} orders`);
+    throw new RolledBack();
+  });
+} catch (error) {
+  if (!(error instanceof RolledBack)) {
+    await sql.end();
+    throw error;
+  }
+}
+
+if (reportFailures.length > 0) {
+  await sql.end();
+  console.error(`\nFAIL: reports:\n  ${reportFailures.join("\n  ")}`);
+  process.exit(1);
+}
+console.log("PASS: a customer calling a report directly is refused; the seller sees every order.");
+
 // ───────────────────────────── Reviews ─────────────────────────────
 
 // Straight into the table, the way a forged request or a seed script would:
