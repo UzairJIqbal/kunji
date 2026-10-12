@@ -14,17 +14,19 @@ const serverSchema = z.object({
   // The seller's WhatsApp, as wa.me wants it: 92 then the mobile number, no
   // leading zero, no plus. "03001234567" would open a chat with nobody.
   WHATSAPP_NUMBER: z.string().regex(/^923\d{9}$/, "92 then the mobile number, e.g. 923001234567"),
-  // The ntfy server the seller's phone listens to. Only its shape is checked: a
-  // server that can't be reached fails the ping, which logs it and moves on.
-  NTFY_URL: z.url({ protocol: /^https?$/ }).default("https://ntfy.sh"),
-  // Anyone who knows the topic can read the pings, so it's a long random secret
-  // rather than a name: ntfy's alphabet, at least 24 characters.
-  NTFY_TOPIC: z
-    .string()
-    .regex(/^[\w-]{24,64}$/, "24 to 64 letters, digits, - or _, e.g. from `openssl rand -hex 16`"),
-  // Where links in the ping point. Set here rather than taken from the request,
-  // so a forged Host header can't put someone else's link on the seller's phone.
+  // Where links in the seller's notifications point. Set here rather than taken
+  // from the request, so a forged Host header can't put someone else's link on
+  // the seller's screen.
   SITE_URL: z.url({ protocol: /^https?$/ }),
+  // Web Push's VAPID pair, base64url as `pnpm exec web-push generate-vapid-keys`
+  // prints it. The public key goes to the seller's browser; the private one
+  // never leaves the server, and also seals the stored subscriptions.
+  VAPID_PUBLIC_KEY: z.string().regex(/^[A-Za-z0-9_-]{87}$/, "the public key from `web-push generate-vapid-keys`"),
+  VAPID_PRIVATE_KEY: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "the private key from `web-push generate-vapid-keys`"),
+  // Resend's free plan, without a verified domain, only delivers to the Resend
+  // account's own address, so this is that address.
+  RESEND_API_KEY: z.string().startsWith("re_", "a Resend API key, starting re_"),
+  SELLER_EMAIL: z.email(),
   // Encrypts every credential in the vault. Checked here so the app refuses
   // to start without it; only lib/vault-crypto.ts ever reads it. The message
   // is the key parser's own, which never repeats the value.
@@ -59,9 +61,11 @@ function parseServerEnv() {
   const parsed = serverSchema.safeParse({
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     WHATSAPP_NUMBER: process.env.WHATSAPP_NUMBER,
-    NTFY_URL: process.env.NTFY_URL,
-    NTFY_TOPIC: process.env.NTFY_TOPIC,
     SITE_URL: process.env.SITE_URL,
+    VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    SELLER_EMAIL: process.env.SELLER_EMAIL,
     VAULT_KEY: process.env.VAULT_KEY,
   });
   if (!parsed.success) fail(parsed.error);
@@ -78,7 +82,21 @@ export function whatsappNumber(): string {
   return parseServerEnv().WHATSAPP_NUMBER;
 }
 
-export function ntfyEnv() {
-  const { NTFY_URL, NTFY_TOPIC, SITE_URL } = parseServerEnv();
-  return { url: NTFY_URL, topic: NTFY_TOPIC, siteUrl: SITE_URL };
+export function siteUrl(): string {
+  return parseServerEnv().SITE_URL;
+}
+
+export function pushEnv() {
+  const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SELLER_EMAIL } = parseServerEnv();
+  return { publicKey: VAPID_PUBLIC_KEY, privateKey: VAPID_PRIVATE_KEY, contact: `mailto:${SELLER_EMAIL}` };
+}
+
+// Only the public half, for the page that switches a browser on.
+export function vapidPublicKey(): string {
+  return parseServerEnv().VAPID_PUBLIC_KEY;
+}
+
+export function emailEnv() {
+  const { RESEND_API_KEY, SELLER_EMAIL } = parseServerEnv();
+  return { apiKey: RESEND_API_KEY, to: SELLER_EMAIL };
 }

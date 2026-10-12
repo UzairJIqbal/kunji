@@ -95,18 +95,3 @@ export const replacementPurchaseSchema = z.object({
   supplierOrderNumber: requiredText("numastore order number", 64),
   cost: wholeNumber("Cost", 1, 1_000_000),
 });
-
-// ───────────────────────────── The ping ─────────────────────────────
-
-// As the other pings: the order number and where to look, nothing the
-// customer wrote and nothing about the credential.
-export function ticketOpenedPing(
-  ticket: { id: string; orderNumber: number; reason: TicketReason },
-  siteUrl: string,
-): { title: string; message: string; click: string } {
-  return {
-    title: `Problem reported: order #${ticket.orderNumber}`,
-    message: ticketReasonLabel[ticket.reason],
-    click: new URL(`/admin/tickets/${ticket.id}`, siteUrl).toString(),
-  };
-}

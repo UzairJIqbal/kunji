@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { boughtSchema, buyNeededPing, formatWaiting, isOverdue, minutesWaiting, priceDifference } from "./buying.ts";
+import { boughtSchema, formatWaiting, isOverdue, minutesWaiting, priceDifference } from "./buying.ts";
 
 test("a purchase needs the numastore order number and a whole amount", () => {
   assert.deepEqual(boughtSchema.parse({ supplierOrderNumber: " NS-123 ", amountPaid: "1250" }), {
@@ -40,12 +40,4 @@ test("waiting reads in minutes, then hours", () => {
   assert.equal(formatWaiting(59), "59 min");
   assert.equal(formatWaiting(60), "1 h");
   assert.equal(formatWaiting(125), "2 h 5 min");
-});
-
-test("the buy ping carries the order number, amount and the admin link only", () => {
-  assert.deepEqual(buyNeededPing({ number: 1042, price: 1450 }, "https://kunji.example"), {
-    title: "Buy needed: order #1042",
-    message: "Rs 1,450 approved. Buy it on numastore.",
-    click: "https://kunji.example/admin",
-  });
 });

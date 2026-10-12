@@ -2,7 +2,8 @@
 // off, if a vault entry can be inserted without going through delivery, or if
 // a customer can open a ticket on an order whose warranty has ended, or if a
 // review can be written by anyone but a delivered order's own customer or
-// changed by anyone but its author.
+// changed by anyone but its author, or if a customer can reach the seller's
+// notification devices or switches.
 // Runs from the terminal now and in CI later, so it talks to Postgres
 // directly rather than through the MCP. Nothing it does is kept: the insert
 // attempt runs in a transaction that is always rolled back.
@@ -224,6 +225,90 @@ if (reportFailures.length > 0) {
   process.exit(1);
 }
 console.log("PASS: a customer calling a report directly is refused; the seller sees every order.");
+
+// ───────────────────────────── Seller notifications ─────────────────────────────
+
+// The seller's devices and switches are admin-only. A device is planted (as
+// the database owner, inside the rolled-back transaction) so there is one to
+// leak. A customer reads neither table and can't add a device; through the
+// narrow door, they get nothing for another customer's order, and for their
+// own verifying order only the switches and ciphertext. Dropping a device
+// needs its tag, which the door never hands out, so a guessed tag removes
+// nothing. The seller reads both tables. No admin or verifying order fails.
+const alertFailures: string[] = [];
+try {
+  await sql.begin(async (tx) => {
+    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
+    const [verifying] = await tx<{ id: string; customer_id: string }[]>`
+      select o.id, o.customer_id from public.orders o
+      where o.status = 'verifying'
+        and not exists (select 1 from public.admins a where a.clerk_user_id = o.customer_id)
+      limit 1
+    `;
+    if (!admin || !verifying) {
+      alertFailures.push(
+        `could not run: needs an admin and a customer's verifying order (admin ${admin ? "found" : "missing"}, verifying ${verifying ? "found" : "missing"})`,
+      );
+      throw new RolledBack();
+    }
+    const tag = "a".repeat(64);
+    await tx`
+      insert into public.push_subscriptions (subscription, endpoint_tag, label, created_by)
+      values (${`v1:${"B".repeat(80)}`}, ${tag}, 'planted by check:rls', ${admin.id})
+    `;
+
+    await tx`set local role authenticated`;
+    const signIn = (sub: string) =>
+      tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub, role: "authenticated" })}, true)`;
+
+    await signIn(verifying.customer_id);
+    const [devices] = await tx<{ n: number }[]>`select count(*)::int as n from public.push_subscriptions`;
+    if (devices.n !== 0) alertFailures.push(`a customer read ${devices.n} push subscriptions`);
+    const [settings] = await tx<{ n: number }[]>`select count(*)::int as n from public.seller_alert_settings`;
+    if (settings.n !== 0) alertFailures.push("a customer read the notification switches");
+    try {
+      await tx.savepoint((sp) => sp`
+        insert into public.push_subscriptions (subscription, endpoint_tag, label)
+        values (${`v1:${"C".repeat(80)}`}, ${"b".repeat(64)}, 'customer')
+      `);
+      alertFailures.push("a customer added a push subscription: ACCEPTED");
+    } catch (error) {
+      const code = error instanceof postgres.PostgresError ? error.code : "unknown";
+      if (code !== "42501") alertFailures.push(`a customer adding a push subscription: refused, but not for permission (${code})`);
+    }
+
+    const own = await tx<{ subscriptions: string[] }[]>`select subscriptions from public.proof_alert_targets(${verifying.id})`;
+    if (own.length !== 1) alertFailures.push(`the order's own customer got ${own.length} rows from proof_alert_targets, not 1`);
+    else if (!own[0].subscriptions.includes(`v1:${"B".repeat(80)}`) || own[0].subscriptions.some((x) => !x.startsWith("v1:"))) {
+      alertFailures.push("proof_alert_targets gave the customer something other than the sealed subscriptions");
+    }
+    await tx`select public.drop_push_subscription(${verifying.id}, ${"c".repeat(64)})`;
+
+    await signIn("user_checkrlsnobody");
+    const other = await tx`select 1 from public.proof_alert_targets(${verifying.id})`;
+    if (other.length !== 0) alertFailures.push("another signed-in user got the notification targets for someone's order");
+    await tx`select public.drop_push_subscription(${verifying.id}, ${tag})`;
+
+    await signIn(admin.id);
+    const [kept] = await tx<{ n: number }[]>`select count(*)::int as n from public.push_subscriptions where endpoint_tag = ${tag}`;
+    if (kept.n !== 1) alertFailures.push("a device was removed by someone without its tag or its order");
+    const [seen] = await tx<{ n: number }[]>`select count(*)::int as n from public.seller_alert_settings`;
+    if (seen.n !== 1) alertFailures.push("the seller can't read the notification switches");
+    throw new RolledBack();
+  });
+} catch (error) {
+  if (!(error instanceof RolledBack)) {
+    await sql.end();
+    throw error;
+  }
+}
+
+if (alertFailures.length > 0) {
+  await sql.end();
+  console.error(`\nFAIL: seller notifications:\n  ${alertFailures.join("\n  ")}`);
+  process.exit(1);
+}
+console.log("PASS: the seller's devices and switches are admin-only; a customer sees only ciphertext, for their own verifying order.");
 
 // ───────────────────────────── Reviews ─────────────────────────────
 

@@ -4,13 +4,10 @@ import { randomUUID } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import type { RevealResult } from "@/lib/actions/vault";
 import { MALFORMED, failed, saved } from "@/lib/actions/results";
 import { type FormState, formValues, idSchema, refusal } from "@/lib/catalogue";
-import { ntfyEnv } from "@/lib/env";
 import { detectImageType, imageContentType } from "@/lib/image-type";
-import { pingSeller } from "@/lib/ntfy";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { credentialSchema, parseCredential, serializeCredential } from "@/lib/vault";
 import { decryptCredential, encryptCredential } from "@/lib/vault-crypto";
@@ -21,7 +18,6 @@ import {
   claimSchema,
   messageSchema,
   replacementPurchaseSchema,
-  ticketOpenedPing,
   ticketSchema,
 } from "@/lib/warranty";
 
@@ -95,17 +91,13 @@ export async function openTicket(orderId: string, prev: FormState, formData: For
     if (uploadError) return failed("Not sent: the screenshot didn't upload. Try again.", prev);
   }
 
-  const { data: ticket, error } = await supabase
-    .from("warranty_tickets")
-    .insert({
-      order_id: order.data,
-      customer_id: userId,
-      reason: parsed.data.reason,
-      note: parsed.data.note,
-      screenshot_path: path,
-    })
-    .select("id")
-    .single();
+  const { error } = await supabase.from("warranty_tickets").insert({
+    order_id: order.data,
+    customer_id: userId,
+    reason: parsed.data.reason,
+    note: parsed.data.note,
+    screenshot_path: path,
+  });
   if (error) {
     // No ticket names the file, so the customer may take it back.
     if (path) await supabase.storage.from(TICKET_SCREENSHOT_BUCKET).remove([path]);
@@ -123,12 +115,6 @@ export async function openTicket(orderId: string, prev: FormState, formData: For
         return failed("Not sent. Try again, or message us on WhatsApp.", prev);
     }
   }
-
-  // Says which order and what kind of problem, nothing the customer wrote.
-  const reason = parsed.data.reason;
-  after(async () => {
-    await pingSeller(ticketOpenedPing({ id: ticket.id, orderNumber: target.number, reason }, ntfyEnv().siteUrl));
-  });
 
   redirect(`/account/orders/${target.number}`);
 }

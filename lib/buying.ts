@@ -45,19 +45,3 @@ export function formatWaiting(minutes: number): string {
   const rest = minutes % 60;
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
-
-// ───────────────────────────── The ping ─────────────────────────────
-
-// Sent when a payment is approved, so the next step is on the seller's phone.
-// As with the proof ping: the order number, the amount and a link to the
-// admin screen, nothing else.
-export function buyNeededPing(
-  order: { number: number; price: number },
-  siteUrl: string,
-): { title: string; message: string; click: string } {
-  return {
-    title: `Buy needed: order #${order.number}`,
-    message: `${formatRupees(order.price)} approved. Buy it on numastore.`,
-    click: new URL("/admin", siteUrl).toString(),
-  };
-}

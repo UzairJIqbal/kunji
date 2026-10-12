@@ -6,7 +6,6 @@ import {
   proRataRefund,
   replacementPurchaseSchema,
   ticketIsOpen,
-  ticketOpenedPing,
   ticketSchema,
   warrantyRunning,
 } from "./warranty.ts";
@@ -62,15 +61,4 @@ test("a claim needs its reference; a bought replacement needs a number and a who
   });
   assert.equal(replacementPurchaseSchema.safeParse({ supplierOrderNumber: "NS 1", cost: "0" }).success, false);
   assert.equal(replacementPurchaseSchema.safeParse({ supplierOrderNumber: "NS 1", cost: "9.5" }).success, false);
-});
-
-test("the ticket ping names the order and reason, and links to the ticket", () => {
-  assert.deepEqual(
-    ticketOpenedPing({ id: "abc", orderNumber: 1042, reason: "login_failed" }, "https://kunji.example"),
-    {
-      title: "Problem reported: order #1042",
-      message: "Login doesn't work",
-      click: "https://kunji.example/admin/tickets/abc",
-    },
-  );
 });

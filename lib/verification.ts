@@ -50,12 +50,12 @@ export function awayMessage(backAt: string): string {
   return `Orders placed now are delivered after ${formatClockTime(backAt)}`;
 }
 
-// ───────────────────────────── The ping ─────────────────────────────
+// ───────────────────────────── The alert ─────────────────────────────
 
-// A notification in a third party's app: the order number, what to look for in
-// the wallet, and where to check it. Nothing about the customer, no receipt.
-// Tapping it opens the queue.
-export function newProofPing(
+// The browser notification and email for new proof: the order number, what to
+// look for in the wallet, and where to check it. Nothing about the customer,
+// no receipt. Tapping it opens the queue.
+export function newProofAlert(
   order: { number: number; price: number; method: PaymentMethod },
   siteUrl: string,
 ): { title: string; message: string; click: string } {

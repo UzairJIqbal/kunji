@@ -14,10 +14,10 @@ import {
   proofSchema,
 } from "@/lib/checkout";
 import { detectImageType, imageContentType } from "@/lib/image-type";
-import { ntfyEnv } from "@/lib/env";
+import { siteUrl } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { pingSeller } from "@/lib/ntfy";
-import { newProofPing } from "@/lib/verification";
+import { alertSellerOfProof } from "@/lib/notify-seller";
+import { newProofAlert } from "@/lib/verification";
 
 // Every write runs as the signed-in customer, and the policies and triggers
 // decide: the price comes from the plan in the database, an order can only be
@@ -193,8 +193,9 @@ export async function submitProof(
     return proofFailure(error, prev);
   }
 
-  // The proof is saved; from here nothing can take that back. The seller's ping
-  // goes once the customer has their answer, and only says what to look for.
+  // The proof is saved; from here nothing can take that back. The seller is
+  // told once the customer has their answer (push and email, as switched
+  // on), and only what to look for.
   const method = paidInto.method;
   after(async () => {
     const { data: placed, error: readError } = await supabase
@@ -203,10 +204,10 @@ export async function submitProof(
       .eq("id", order.data)
       .single();
     if (readError) {
-      console.error(`Ping skipped: couldn't read the order (${readError.code ?? "no code"})`);
+      console.error(`Notifications skipped: couldn't read the order (${readError.code ?? "no code"})`);
       return;
     }
-    await pingSeller(newProofPing({ ...placed, method }, ntfyEnv().siteUrl));
+    await alertSellerOfProof(supabase, order.data, newProofAlert({ ...placed, method }, siteUrl()));
   });
 
   refresh();

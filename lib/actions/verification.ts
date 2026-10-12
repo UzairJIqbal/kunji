@@ -1,12 +1,8 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { after } from "next/server";
 import { MALFORMED, decisionFailure, failed, saved } from "@/lib/actions/results";
-import { buyNeededPing } from "@/lib/buying";
 import { type FormState, formValues, idSchema, refusal } from "@/lib/catalogue";
-import { ntfyEnv } from "@/lib/env";
-import { pingSeller } from "@/lib/ntfy";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { awaySchema, refundSchema, rejectionSchema } from "@/lib/verification";
 
@@ -22,21 +18,6 @@ export async function approvePayment(orderId: string, prev: FormState): Promise<
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc("approve_payment", { p_order_id: order.data });
   if (error) return decisionFailure(error, prev);
-
-  // The next step is buying it, so it goes to the seller's phone now. After
-  // the response, and never able to undo the approval.
-  after(async () => {
-    const { data: approved, error: readError } = await supabase
-      .from("orders")
-      .select("number, price")
-      .eq("id", order.data)
-      .single();
-    if (readError) {
-      console.error(`Ping skipped: couldn't read the order (${readError.code ?? "no code"})`);
-      return;
-    }
-    await pingSeller(buyNeededPing(approved, ntfyEnv().siteUrl));
-  });
 
   refresh();
   return saved("Approved.", prev);

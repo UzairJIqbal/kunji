@@ -157,8 +157,7 @@ pulls toward skipping the payment check because it's slow. Both are refused.
   receipt image. A transaction ID can only ever be used once.
 - An "away" switch for the seller. While it's on, every page says when orders
   will be handled, before anyone pays.
-- A verification queue for the seller that updates live, and a ping to the
-  seller's phone when something lands in it.
+- A verification queue for the seller that updates live.
 - **The buy step**: a list of paid orders waiting to be bought, each with a link
   straight to the item on numastore, the plan, and the customer's activation
   email ready to copy. The seller records the numastore order number and what
@@ -194,10 +193,9 @@ like an improvement. The reason matters more than the refusal.
   once the reports show which ones those are. It needs money up front and
   changes the risk, so it waits until the basic pipeline has proven itself.
 - **Automatic payment verification in v1.** Easypaisa and JazzCash merchant
-  APIs need a registered business account, so they're out entirely. Matching
-  payments against the wallet's own SMS is possible for free, and it's planned
-  as Phase 12, after v1 has run with real orders. In v1 a person checks every
-  payment, and the software makes that check fast and hard to fool.
+  APIs need a registered business account, so they're out entirely. A person
+  checks every payment, and the software makes that check fast and hard to
+  fool. Phase 12 makes sure the seller hears about each payment straight away.
 - **Binance Pay and crypto.** Needs a verified merchant account, and the legal
   position of crypto payments for a Pakistani business is unsettled.
 - **Fake urgency of any kind.** Countdown timers, "12 people are viewing this",
@@ -246,11 +244,10 @@ business rules and not the tools.
 - **Node's built-in crypto** to encrypt credentials before they reach the
   database. No package needed.
 - **Zod** at every boundary where data comes from a browser.
-- **ntfy** (ntfy.sh) to ping the seller's phone. Free, no account, one HTTP
-  call, no SDK. Telegram was the first choice, but it's often blocked in
-  Pakistan. The topic name is a long random secret kept in the environment,
-  and a ping never carries anything private: only an order number, amount and
-  a link to the admin screen, which needs the seller's sign-in anyway.
+- **Web Push and Resend** (free plan) to tell the seller about new payments,
+  from Phase 12. A notification never carries anything private: only an order
+  number, amount, method and a link to the admin screen, which needs the
+  seller's sign-in anyway.
 - **pnpm, GitHub Actions CI, CodeRabbit.** A small one-person store doesn't
   need a review on every phase, so phases go straight to main. CodeRabbit
   reviews only the two phases where a bug costs money or leaks a login:
@@ -356,9 +353,9 @@ them.
 page and the seller's queues both subscribe to changes. Nothing reads the
 database on a loop.
 
-**Pings to the seller never block the order.** If the ntfy ping fails,
-the order still goes through and the failure is logged. The queues on the admin
-screen are the source of truth; the ping is a convenience.
+**Notifications to the seller never block the order.** If one fails, the order
+still goes through and the failure is logged. The queues on the admin screen
+are the source of truth; a notification is a convenience.
 
 ## The interface
 
@@ -410,28 +407,22 @@ automation only where the reports show it's needed. Two upgrades are planned,
 and each one is built only once there's evidence for it, such as orders
 regularly waiting more than 30 minutes.
 
-**Phase 12: matching payments against the wallet's SMS.** Easypaisa and
-JazzCash text the seller when money arrives, with the amount and transaction
-ID. A free Android SMS-forwarding app sends those texts to Kunji. When a
-*verifying* order has exactly that transaction ID, exactly that amount and the
-same method, it's approved without the seller. Anything less than an exact
-match waits for the seller, as in v1. This keeps the rule: *paid* still means
-the money really arrived, because the proof is the wallet's own message, not
-the customer's screenshot.
+**Phase 12: new order notifications.** When a customer submits payment proof,
+the seller gets a browser notification (Web Push) on every device they've
+switched on, and an email through Resend's free plan.
+Each says only the order number, amount and method, with a link to the queue.
+Nothing is approved automatically: the seller still approves every payment, so
+*paid* still means a person checked the money arrived.
 
 **Phase 13: a small stock of best sellers.** For products where numastore
 hands over a login (not ones activated on the customer's own email), the
 seller buys a few in advance. A paid order for a stocked plan goes straight
-to the vault. With Phase 12, a stocked product can be delivered at 2am with
-nobody awake, and still nothing ever touches numastore automatically.
+to the vault the moment the seller approves the payment, with no buying step,
+and still nothing ever touches numastore automatically.
 
 What stays manual even then: buying on numastore. There's no safe way to
 automate it without an API from them, and a bot on the seller's account risks
 the whole business. If numastore ever offers a reseller API, that changes.
-
-The ntfy ping stays as the notification. It's free, instant and works with
-the phone locked. Browser push notifications from Kunji itself are possible
-later if ntfy ever gets in the way.
 
 ## Where this is likely to go wrong
 
@@ -443,7 +434,7 @@ several orders. The reports phase shows this number so it can't hide.
 **A paid order that nobody bought.** The seller approves the payment, gets
 distracted, and the order sits. This is the most likely way to lose a customer.
 The buy list shows how long each paid order has been waiting, oldest first, and
-the ping repeats the order number.
+the oldest waits are marked in amber.
 
 **numastore out of stock after the customer paid.** It will happen, often with
 the popular items. The refund path has to be one tap and the customer has to

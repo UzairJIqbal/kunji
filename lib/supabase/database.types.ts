@@ -414,6 +414,33 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          created_by: string
+          endpoint_tag: string
+          id: string
+          label: string
+          subscription: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          endpoint_tag: string
+          id?: string
+          label: string
+          subscription: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          endpoint_tag?: string
+          id?: string
+          label?: string
+          subscription?: string
+        }
+        Relationships: []
+      }
       refunds: {
         Row: {
           amount: number
@@ -607,6 +634,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      seller_alert_settings: {
+        Row: {
+          email_on: boolean
+          id: boolean
+          push_on: boolean
+          updated_at: string
+        }
+        Insert: {
+          email_on?: boolean
+          id?: boolean
+          push_on?: boolean
+          updated_at?: string
+        }
+        Update: {
+          email_on?: boolean
+          id?: boolean
+          push_on?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       store_settings: {
         Row: {
@@ -945,6 +993,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      drop_push_subscription: {
+        Args: { p_endpoint_tag: string; p_order_id: string }
+        Returns: undefined
+      }
       hide_review: {
         Args: { p_reason: string; p_review_id: string }
         Returns: undefined
@@ -981,6 +1033,14 @@ export type Database = {
           p_whatsapp?: string
         }
         Returns: number
+      }
+      proof_alert_targets: {
+        Args: { p_order_id: string }
+        Returns: {
+          email_on: boolean
+          push_on: boolean
+          subscriptions: string[]
+        }[]
       }
       record_cannot_supply: { Args: { p_order_id: string }; Returns: undefined }
       refund_rejected_order: {

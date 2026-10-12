@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { formatClockTime } from "./format.ts";
-import { awayMessage, awaySchema, newProofPing, paidIntoLabel, refundSchema, rejectionSchema } from "./verification.ts";
+import { awayMessage, awaySchema, newProofAlert, paidIntoLabel, refundSchema, rejectionSchema } from "./verification.ts";
 
 test("a back-at time reads the way people say it", () => {
   assert.equal(formatClockTime("10:00:00"), "10am");
@@ -55,8 +55,8 @@ test("a refund amount is whole rupees, typed as digits", () => {
   assert.equal(refundSchema.safeParse({ amount: "10", method: "easypaisa", reference: "" }).success, false);
 });
 
-test("the ping carries the order number, amount, method and queue link, nothing else", () => {
-  assert.deepEqual(newProofPing({ number: 1042, price: 1200, method: "jazzcash" }, "https://kunji.example"), {
+test("the proof alert carries the order number, amount, method and queue link, nothing else", () => {
+  assert.deepEqual(newProofAlert({ number: 1042, price: 1200, method: "jazzcash" }, "https://kunji.example"), {
     title: "Payment to check: order #1042",
     message: "Rs 1,200 by JazzCash",
     click: "https://kunji.example/admin",

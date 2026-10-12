@@ -16,7 +16,6 @@ Customers can place orders and submit a transaction ID and receipt, which leaves
 - **The away switch.** One toggle in the admin area, with a "back at" time. While it's on, a banner on every storefront page and on checkout says "Orders placed now are delivered after 10am" (using the time set). Switching it off removes the banner everywhere, live.
 - **The queue updates live.** A new proof appears without a refresh; a row approved on the seller's phone disappears from the laptop.
 - **The customer's order page updates live.** Approved, rejected, and the rejection reason appear without a refresh.
-- **A ping to the seller's phone** through ntfy when a new proof lands: order number, amount, method, and a link to the queue.
 - An admin page for any single order: its full timeline, the customer's WhatsApp number as a tap-to-chat link, and the actions allowed from its current state.
 
 ## Constraints
@@ -24,8 +23,6 @@ Customers can place orders and submit a transaction ID and receipt, which leaves
 - **Live updates are subscriptions, never polling.** Both the queue and the order page subscribe to changes on the rows the policies already let them see.
 - **Approving is one tap, but the facts are side by side.** Transaction ID, amount and method sit next to the receipt so the seller can compare them against their wallet app without opening anything else.
 - Every approve and reject is an order event recording which admin did it and when.
-- **The ping never blocks the order.** If ntfy is down or unreachable, the proof is still saved and the failure is logged. The queue is the source of truth.
-- The ping carries no receipt image and no customer details beyond the order number. It's a message in a third party's app.
 - The receipt is shown through a short-lived link, generated when the queue is opened.
 - The queue works at phone width, because the seller's wallet app is on their phone. The sender's wallet number shows on each row, so it can be matched against the wallet notification.
 - A refund never exceeds the order's price. Every refund records who sent it and when.
@@ -33,14 +30,13 @@ Customers can place orders and submit a transaction ID and receipt, which leaves
 
 ## Acceptance check
 
-1. With the queue open on a laptop, submit proof from a phone as a customer. The row appears on the laptop without a refresh, and an ntfy notification arrives on the seller's phone.
+1. With the queue open on a laptop, submit proof from a phone as a customer. The row appears on the laptop without a refresh.
 2. Approve it on the laptop. The customer's order page on the phone changes to *paid* without a refresh.
 3. Reject another with "amount wrong". The customer sees *rejected* and the reason, live.
 4. Approve that rejected order from its admin page. It moves to *paid*, and its timeline shows both decisions and who made them.
-5. Point the ntfy address in the environment at a server that doesn't exist and submit proof. The order still reaches the queue, and the server log says the ping failed.
-6. Copy a receipt link from the queue, wait past its expiry, and open it. It no longer loads.
-7. Reject an order for "amount wrong", then record a refund to the customer's wallet number. The customer sees *refunded* with the amount, live.
-8. Turn the away switch on with "10am". A customer's open storefront shows the banner without a refresh, and checkout shows it too. Turn it off and it's gone.
+5. Copy a receipt link from the queue, wait past its expiry, and open it. It no longer loads.
+6. Reject an order for "amount wrong", then record a refund to the customer's wallet number. The customer sees *refunded* with the amount, live.
+7. Turn the away switch on with "10am". A customer's open storefront shows the banner without a refresh, and checkout shows it too. Turn it off and it's gone.
 
 ## Not in this phase
 

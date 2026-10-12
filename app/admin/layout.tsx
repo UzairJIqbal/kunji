@@ -26,6 +26,9 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
         <Link href="/admin/reports" className={linkClass}>
           Reports
         </Link>
+        <Link href="/admin/notifications" className={linkClass}>
+          Notifications
+        </Link>
       </nav>
       {children}
     </div>

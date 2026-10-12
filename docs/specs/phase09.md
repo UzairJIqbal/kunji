@@ -21,7 +21,6 @@ Orders are delivered into the vault, each tied to the numastore order it was bou
   - **Refund**: the seller records the amount, method and reference. The form suggests the unused share (price × days left ÷ days bought), and the seller can change it up to the full price.
   Each one moves the order to *replaced* or *refunded*.
 - A replaced order can have another ticket opened while its warranty lasts. Warranty runs from the original delivery, not from the replacement.
-- A ping when a ticket is opened.
 
 ## Constraints
 
@@ -36,7 +35,7 @@ Orders are delivered into the vault, each tied to the numastore order it was bou
 
 ## Acceptance check
 
-1. On a delivered order inside its warranty, report a problem. The seller sees it in the ticket list with the numastore order number, and gets a ping.
+1. On a delivered order inside its warranty, report a problem. The seller sees it in the ticket list with the numastore order number.
 2. Exchange two messages. Each appears on the other side without a refresh.
 3. Mark it claimed, then replace from the claim. The customer's vault entry shows the new login, the order shows *replaced*, the old login is still visible to the seller marked replaced, and the replacement cost is zero.
 4. On another order, replace by buying a new one at Rs 900. The new numastore order number is recorded and the replacement cost is Rs 900.

@@ -14,7 +14,8 @@ rules themselves.
 Next.js 16 App Router, React 19, TypeScript strict. Tailwind v4 and shadcn/ui.
 Clerk for sign-in. Supabase for Postgres, row-level security, Storage and
 Realtime, trusting Clerk's session token through Supabase's Clerk integration. Node's built-in crypto for encrypting credentials. Zod at every
-boundary. An ntfy push for pings to the seller. pnpm.
+boundary. Web Push and Resend email for notifying the
+seller (Phase 12). pnpm.
 
 Next.js 16 changed a lot. If you're not certain about an API, read the docs
 inside the installed package rather than going from memory. Same for
@@ -138,8 +139,8 @@ Breaking one of these is worse than not finishing.
   a log, an error message, a URL, a toast, an analytics event or a commit. Not
   even in an error path.
 - **Never mark an order paid without the seller approving it.** Uploading a
-  receipt moves it to verifying, nothing more. (From Phase 12, an exact match
-  against the wallet's own SMS also counts. Nothing looser ever does.)
+  receipt moves it to verifying, nothing more. Notifications only tell the
+  seller; they never move an order.
 - **Never automate numastore.** The app doesn't scrape it, read its prices,
   log in to it or buy from it. The seller does that by hand; the app only
   stores the link and what the seller records.
