@@ -43,7 +43,7 @@ jobs:
       # Fresh per run, so nothing about it can be reused.
       - run: echo "VAULT_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
       - name: Types
-        run: pnpm exec tsc --noEmit
+        run: pnpm typecheck
       - name: Lint
         run: pnpm lint
       - name: Tests

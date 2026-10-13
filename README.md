@@ -51,7 +51,7 @@ You need Node 24 (see `.nvmrc`), pnpm, a Supabase project and a Clerk applicatio
 Checks, all run by CI on every pull request:
 
 ```bash
-pnpm exec tsc --noEmit   # types
+pnpm typecheck           # types, after generating the route types Next.js provides
 pnpm lint
 pnpm test                # money, dates, statuses and crypto
 pnpm build
