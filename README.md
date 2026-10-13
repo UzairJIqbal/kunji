@@ -4,12 +4,6 @@ A store for digital subscriptions priced in Pakistani rupees, paid from a mobile
 
 **Live demo:** _coming soon_
 
-<!-- Screenshots, added after deploy
-| Home | Product page on a phone | Vault | Admin queue |
-| --- | --- | --- | --- |
-| ![Home page](docs/screenshots/home.png) | ![Product page on a phone](docs/screenshots/product-phone.png) | ![Customer vault](docs/screenshots/vault.png) | ![Admin verification queue](docs/screenshots/admin-queue.png) |
--->
-
 ## What it does
 
 - Customers browse the catalogue without signing in. Every listing shows what you get, the duration, the warranty and how delivery works.
