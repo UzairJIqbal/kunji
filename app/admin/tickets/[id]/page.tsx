@@ -28,7 +28,7 @@ import { adminTicketStatus, proRataRefund, ticketIsOpen, ticketReasonLabel } fro
 export const metadata: Metadata = { title: "Ticket · Admin · Kunji" };
 
 const headingClass = "text-xs font-medium text-muted-foreground";
-const linkClass = "font-medium text-primary underline-offset-4 hover:underline";
+const linkClass = "text-link";
 
 export default function AdminTicketPage({ params }: PageProps<"/admin/tickets/[id]">) {
   return (
@@ -61,7 +61,7 @@ async function Ticket({ params }: Pick<PageProps<"/admin/tickets/[id]">, "params
     <>
       <LiveTickets ticketId={ticket.id} />
       <div className="flex flex-wrap items-baseline gap-x-3">
-        <h1 className="text-sm font-semibold">
+        <h1 className="font-heading text-xl leading-tight">
           {ticketReasonLabel[ticket.reason]} on{" "}
           <Link href={`/admin/orders/${order.number}`} className={`font-mono ${linkClass}`}>
             #{order.number}

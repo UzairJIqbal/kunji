@@ -22,7 +22,7 @@ const tdNum = "py-0.5 pl-3 text-right font-mono tabular-nums";
 export default function PlanStockPage({ params }: PageProps<"/admin/stock/[planId]">) {
   return (
     <main className="mt-3 max-w-3xl">
-      <Link href="/admin/stock" className="rounded-sm text-xs font-medium text-primary underline-offset-4 hover:underline">
+      <Link href="/admin/stock" className="text-link text-xs">
         Stock
       </Link>
       <Suspense fallback={<p className="mt-2 text-muted-foreground">Loading…</p>}>
@@ -50,7 +50,7 @@ async function PlanStock({ params }: { params: Promise<{ planId: string }> }) {
 
   return (
     <>
-      <h1 className="mt-1 text-sm font-semibold">
+      <h1 className="mt-1 font-heading text-xl leading-tight">
         <Link href={`/admin/products/${product.id}`} className="rounded-sm underline-offset-4 hover:underline">
           {product.name}
         </Link>
@@ -120,7 +120,7 @@ async function PlanStock({ params }: { params: Promise<{ planId: string }> }) {
                             Delivered on{" "}
                             <Link
                               href={`/admin/orders/${item.orders.number}`}
-                              className="rounded-sm font-mono text-primary underline-offset-4 hover:underline"
+                              className="text-link font-mono"
                             >
                               #{item.orders.number}
                             </Link>

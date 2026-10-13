@@ -31,7 +31,7 @@ export function CheckoutForm({
 
       {askEmail && (
         <fieldset className="grid gap-3">
-          <legend className="text-base font-semibold">Email to activate it on</legend>
+          <legend className="heading-section">Email to activate it on</legend>
           <p className={storeHintClass}>
             The subscription is switched on for this email. Type it twice so a typo
             can&apos;t activate someone else&apos;s account.

@@ -63,7 +63,7 @@ export function ThemeControl() {
       onClick={next}
       aria-label={`${LABEL[theme]}. Tap to change.`}
       title={LABEL[theme]}
-      className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-ring"
     >
       <Icon className="size-[18px]" aria-hidden />
     </button>

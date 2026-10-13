@@ -23,20 +23,20 @@ const browseSchema = z.object({
 
 export default function StorePage({ searchParams }: PageProps<"/">) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Subscriptions, paid in rupees</h1>
-      <p className="mt-1 max-w-prose text-muted-foreground">
+    <main className="mx-auto w-full max-w-5xl px-4 pt-10 pb-6 sm:pt-16">
+      <h1 className="heading-display">Subscriptions, paid in rupees</h1>
+      <p className="mt-3 max-w-prose text-muted-foreground">
         Pay from your mobile wallet. Your login arrives in a private vault that only you can
         open.{" "}
         <Link
           href="/how-it-works"
-          className="rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="text-link"
         >
           How it works
         </Link>
       </p>
 
-      <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading products…</p>}>
+      <Suspense fallback={<p className="mt-10 text-sm text-muted-foreground">Loading products…</p>}>
         <Catalogue searchParams={searchParams} />
       </Suspense>
     </main>
@@ -51,8 +51,6 @@ function browseHref({ query, category }: CatalogueFilter): string {
   return search ? `/?${search}` : "/";
 }
 
-const chip =
-  "inline-flex h-10 items-center rounded-full border px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   const parsed = browseSchema.parse(await searchParams);
@@ -69,7 +67,7 @@ async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">)
 
   if (products.length === 0) {
     return (
-      <p className="mt-6 rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+      <p className="empty-state mt-10">
         Nothing is listed yet. Check back soon.
       </p>
     );
@@ -81,7 +79,7 @@ async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">)
 
   return (
     <>
-      <Form action="/" role="search" className="mt-5 flex gap-2">
+      <Form action="/" role="search" className="mt-8 flex max-w-xl gap-2">
         <label htmlFor="q" className="sr-only">
           Search products
         </label>
@@ -92,19 +90,19 @@ async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">)
           defaultValue={filter.query}
           placeholder="Search products"
           maxLength={80}
-          className="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-base placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring"
+          className="field h-11 flex-1 px-3 text-base"
         />
         {filter.category && <input type="hidden" name="category" value={filter.category} />}
         <button
           type="submit"
-          className="h-11 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="btn-primary h-11 text-sm"
         >
           Search
         </button>
       </Form>
 
       {categories.length > 1 && (
-        <nav aria-label="Categories" className="mt-3 flex flex-wrap gap-2">
+        <nav aria-label="Categories" className="mt-4 flex flex-wrap gap-2">
           {["", ...categories].map((category) => {
             const current = category === filter.category;
             return (
@@ -112,7 +110,7 @@ async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">)
                 key={category || "all"}
                 href={browseHref({ query: filter.query, category })}
                 aria-current={current ? "page" : undefined}
-                className={`${chip} ${current ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                className="chip h-10"
               >
                 {category || "All"}
               </Link>
@@ -122,7 +120,7 @@ async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">)
       )}
 
       {groups.length === 0 ? (
-        <div className="mt-6 rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+        <div className="empty-state mt-8">
           <p>
             Nothing matches
             {filter.query && <> &ldquo;{filter.query}&rdquo;</>}
@@ -130,18 +128,18 @@ async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">)
           </p>
           <Link
             href="/"
-            className="mt-2 inline-flex min-h-11 items-center rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="text-link mt-2 inline-flex min-h-11 items-center"
           >
             Show everything
           </Link>
         </div>
       ) : (
         groups.map((group, i) => (
-          <section key={group.category} aria-labelledby={`category-${i}`} className="mt-6">
-            <h2 id={`category-${i}`} className="text-base font-semibold">
+          <section key={group.category} aria-labelledby={`category-${i}`} className="mt-10 sm:mt-14">
+            <h2 id={`category-${i}`} className="heading-title">
               {group.category}
             </h2>
-            <ul className="mt-2 grid gap-3 sm:grid-cols-2">
+            <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {group.products.map((product) => (
                 <li key={product.slug}>
                   <ProductCard product={product} />
@@ -155,7 +153,7 @@ async function Catalogue({ searchParams }: Pick<PageProps<"/">, "searchParams">)
       {filtering && groups.length > 0 && (
         <Link
           href="/"
-          className="mt-4 inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="text-link mt-4 inline-flex min-h-11 items-center text-sm"
         >
           Show everything
         </Link>

@@ -3,14 +3,15 @@ import { whatsappNumber } from "@/lib/env";
 import { whatsappLink } from "@/lib/storefront";
 
 const link =
-  "inline-flex min-h-11 items-center rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "inline-flex min-h-11 items-center rounded-sm font-medium text-footer-foreground underline decoration-footer-muted decoration-1 underline-offset-4 hover:decoration-footer-foreground focus-ring";
 
 // A way to a human from every page, before anyone has an order to ask about.
 export function SiteFooter() {
   return (
-    <footer className="mt-12 border-t">
-      <div className="mx-auto max-w-3xl px-4 py-4 text-sm">
-        <p className="text-muted-foreground">
+    // The design's charcoal footer, the same in either theme.
+    <footer className="mt-16 bg-footer text-footer-foreground [--ring:var(--footer-foreground)]">
+      <div className="mx-auto max-w-5xl px-4 py-8 text-sm">
+        <p className="text-footer-muted">
           Questions before you buy?{" "}
           <a href={whatsappLink(whatsappNumber())} className={link} rel="noopener">
             Message us on WhatsApp

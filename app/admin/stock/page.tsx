@@ -18,7 +18,7 @@ const tdNum = "py-0.5 pl-3 text-right font-mono tabular-nums";
 export default function StockPage() {
   return (
     <main className="mt-3">
-      <h1 className="text-sm font-semibold">Stock</h1>
+      <h1 className="font-heading text-xl leading-tight">Stock</h1>
       <p className="mt-0.5 text-xs text-muted-foreground">
         Logins bought ahead, delivered the moment a payment is approved. Open a plan to add stock. Products that need
         the customer&apos;s activation email can&apos;t be stocked and aren&apos;t listed.
@@ -73,7 +73,7 @@ async function StockTable() {
               <td className={td}>
                 <Link
                   href={`/admin/stock/${plan.planId}`}
-                  className="rounded-sm font-medium text-primary underline-offset-4 hover:underline"
+                  className="text-link"
                 >
                   {plan.product}, {formatDays(plan.durationDays)}
                 </Link>
@@ -88,7 +88,7 @@ async function StockTable() {
               <td className={`${td} pl-3`}>
                 <Link
                   href={`/admin/stock/${plan.planId}`}
-                  className="rounded-sm text-xs font-medium text-primary underline-offset-4 hover:underline"
+                  className="text-link text-xs"
                 >
                   Add stock
                 </Link>

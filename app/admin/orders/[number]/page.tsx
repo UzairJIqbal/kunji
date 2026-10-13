@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps<"/admin/orders/[num
 }
 
 const headingClass = "text-xs font-medium text-muted-foreground";
-const linkClass = "font-medium text-primary underline-offset-4 hover:underline";
+const linkClass = "text-link";
 
 export default function AdminOrderPage({ params }: PageProps<"/admin/orders/[number]">) {
   return (

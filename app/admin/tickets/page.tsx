@@ -14,12 +14,12 @@ import { adminTicketStatus, ticketReasonLabel } from "@/lib/warranty";
 export const metadata: Metadata = { title: "Tickets · Admin · Kunji" };
 
 const headingClass = "text-xs font-medium text-muted-foreground";
-const linkClass = "font-medium text-primary underline-offset-4 hover:underline";
+const linkClass = "text-link";
 
 export default function TicketsPage() {
   return (
     <main className="mt-3">
-      <h1 className="text-sm font-semibold">Tickets</h1>
+      <h1 className="font-heading text-xl leading-tight">Tickets</h1>
       <Suspense fallback={<p className="mt-1.5 text-muted-foreground">Loading…</p>}>
         <Tickets />
       </Suspense>

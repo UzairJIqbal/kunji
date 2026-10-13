@@ -25,7 +25,7 @@ export function ProductImage({
       <div
         aria-hidden
         style={{ width: size, height: size }}
-        className="flex shrink-0 items-center justify-center rounded-md bg-muted text-xl font-semibold text-muted-foreground"
+        className="flex shrink-0 items-center justify-center rounded-md bg-raised font-heading text-2xl text-muted-foreground"
       >
         {name.trim().charAt(0).toUpperCase()}
       </div>
@@ -39,25 +39,25 @@ export function ProductImage({
       height={size}
       sizes={`${size}px`}
       loading={eager ? "eager" : "lazy"}
-      className="shrink-0 rounded-md bg-muted object-cover"
+      className="shrink-0 rounded-md bg-raised object-cover"
       style={{ width: size, height: size }}
     />
   );
 }
 
-// Both badges are facts the seller set or the calendar decided. No colour:
-// neither is an order status, and both stay legible on a dim screen.
+// Both badges are facts the seller set or the calendar decided, in the
+// design's olive badge. Not a status colour: olive is the brand's dark.
 export function ProductBadges({ isNew, soldOut }: { isNew: boolean; soldOut: boolean }) {
   if (!isNew && !soldOut) return null;
   return (
     <span className="flex shrink-0 gap-1">
       {soldOut && (
-        <span className="rounded-sm bg-foreground px-1.5 py-0.5 text-xs font-semibold text-background">
+        <span className="rounded-sm bg-primary px-1.5 py-0.5 text-xs font-medium text-primary-foreground">
           Sold out
         </span>
       )}
       {isNew && (
-        <span className="rounded-sm border px-1.5 py-0.5 text-xs font-medium">New</span>
+        <span className="rounded-sm bg-raised px-1.5 py-0.5 text-xs font-medium">New</span>
       )}
     </span>
   );

@@ -11,12 +11,12 @@ import { reviewerLabel } from "@/lib/reviews";
 
 export const metadata: Metadata = { title: "Reviews · Admin · Kunji" };
 
-const linkClass = "font-medium text-primary underline-offset-4 hover:underline";
+const linkClass = "text-link";
 
 export default function ReviewsPage() {
   return (
     <main className="mt-3">
-      <h1 className="text-sm font-semibold">Reviews</h1>
+      <h1 className="font-heading text-xl leading-tight">Reviews</h1>
       <Suspense fallback={<p className="mt-1.5 text-muted-foreground">Loading…</p>}>
         <Reviews />
       </Suspense>

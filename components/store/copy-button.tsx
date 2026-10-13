@@ -21,8 +21,8 @@ export function CopyButton({ value, what, compact = false }: { value: string; wh
     <button
       type="button"
       onClick={copy}
-      className={`inline-flex shrink-0 items-center border font-medium text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-        compact ? "h-6 rounded-md px-1.5 text-xs" : "min-h-11 rounded-lg px-3 text-sm"
+      className={`inline-flex shrink-0 items-center rounded-md bg-secondary font-medium text-secondary-foreground hover:bg-secondary/70 focus-ring ${
+        compact ? "h-6 px-1.5 text-xs" : "min-h-11 px-3 text-sm"
       }`}
     >
       {copied === null ? "Copy" : copied ? "Copied" : "Copy failed"}

@@ -1,6 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Figtree, Geist_Mono, Newsreader } from "next/font/google";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { SiteHeader } from "@/components/site-header";
@@ -11,10 +11,20 @@ import { themeScript } from "@/components/theme-control";
 import { getStoreSettings } from "@/lib/data/verification";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// The design's two faces: a serif for headings, a clean sans for everything
+// else. Upright only; nothing on Kunji is set in italic, so that file is skipped.
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  style: "normal",
+});
+
+const figtree = Figtree({
+  variable: "--font-figtree",
   subsets: ["latin"],
 });
+
+// Order numbers and transaction IDs, which the design doesn't show.
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -31,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // The inline script sets data-theme before React hydrates, hence the warning opt-out.
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${figtree.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

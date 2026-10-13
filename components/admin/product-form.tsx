@@ -215,7 +215,7 @@ export function ProductForm({
               alt="Current product image"
               width={56}
               height={56}
-              className="size-14 shrink-0 rounded-md border object-cover"
+              className="size-14 shrink-0 rounded-md bg-card object-cover"
             />
           )}
           {/* Keyed by save count so a saved file isn't sent again on the next save. */}
@@ -225,7 +225,7 @@ export function ProductForm({
             name="image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            className="min-w-0 text-xs file:mr-2 file:rounded-md file:border file:border-input file:bg-background file:px-2 file:py-1 file:text-xs"
+            className="min-w-0 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-secondary file:text-secondary-foreground file:px-2 file:py-1 file:text-xs"
             {...invalidProps(f("image"), errors.image)}
           />
         </div>

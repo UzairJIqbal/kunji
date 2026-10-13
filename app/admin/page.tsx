@@ -29,7 +29,7 @@ const headingClass = "text-xs font-medium text-muted-foreground";
 export default function AdminPage() {
   return (
     <main className="mt-3">
-      <h1 className="text-sm font-semibold">Admin</h1>
+      <h1 className="font-heading text-xl leading-tight">Admin</h1>
 
       <div className="mt-3 grid items-start gap-5 lg:grid-cols-2">
         <section aria-labelledby="queue-heading">
@@ -92,7 +92,7 @@ export default function AdminPage() {
 async function Queue() {
   if (!(await viewerSeesAdminRows())) {
     return (
-      <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+      <p className="mt-1.5 rounded-md bg-card px-3 py-4 text-muted-foreground">
         This account isn&apos;t an admin.
       </p>
     );
@@ -104,11 +104,11 @@ async function Queue() {
       <LiveOrders />
       <DecisionNotices>
         {rows.length === 0 ? (
-          <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+          <p className="mt-1.5 rounded-md bg-card px-3 py-4 text-muted-foreground">
             Nothing to check. New proof shows up here as it arrives.
           </p>
         ) : (
-          <ol className="mt-1.5 divide-y rounded-md border">
+          <ol className="mt-1.5 divide-y divide-foreground/10 rounded-md bg-card">
             {rows.map((row) => (
               <QueueItem key={row.id} row={row} />
             ))}
@@ -173,11 +173,11 @@ async function BuyLists() {
           To buy on numastore, oldest first
         </h2>
         {toBuy.length === 0 ? (
-          <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+          <p className="mt-1.5 rounded-md bg-card px-3 py-4 text-muted-foreground">
             Nothing to buy. Approved payments show up here.
           </p>
         ) : (
-          <ol className="mt-1.5 divide-y rounded-md border">
+          <ol className="mt-1.5 divide-y divide-foreground/10 rounded-md bg-card">
             {toBuy.map((row) => (
               <BuyItem key={row.id} row={row} renderedAt={renderedAt} />
             ))}
@@ -190,11 +190,11 @@ async function BuyLists() {
           To deliver: paste what numastore sent
         </h2>
         {toDeliver.length === 0 ? (
-          <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+          <p className="mt-1.5 rounded-md bg-card px-3 py-4 text-muted-foreground">
             Nothing to deliver. Orders show up here once they&apos;re bought.
           </p>
         ) : (
-          <ol className="mt-1.5 divide-y rounded-md border">
+          <ol className="mt-1.5 divide-y divide-foreground/10 rounded-md bg-card">
             {toDeliver.map((row) => (
               <DeliverItem key={row.id} row={row} />
             ))}
@@ -207,7 +207,7 @@ async function BuyLists() {
           <h2 id="refunds-heading" className={headingClass}>
             Refunds to send: numastore couldn&apos;t supply these
           </h2>
-          <ol className="mt-1.5 divide-y rounded-md border">
+          <ol className="mt-1.5 divide-y divide-foreground/10 rounded-md bg-card">
             {toRefund.map((row) => (
               <RefundItem key={row.id} row={row} />
             ))}
@@ -249,7 +249,7 @@ function BuyItem({ row, renderedAt }: { row: BuyRow; renderedAt: string }) {
                 href={row.supplier.numastore_url}
                 target="_blank"
                 rel="noreferrer"
-                className="min-w-0 truncate font-mono text-primary underline-offset-4 hover:underline"
+                className="text-link min-w-0 truncate font-mono"
               >
                 {row.supplier.numastore_url}
               </a>
@@ -351,7 +351,7 @@ function RefundItem({ row }: { row: BuyRow }) {
 function Receipt({ url, number }: { url: string | null; number: number }) {
   if (!url) {
     return (
-      <div className="flex size-20 shrink-0 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
+      <div className="flex size-20 shrink-0 items-center justify-center rounded-sm bg-card text-center text-xs text-muted-foreground">
         No receipt
       </div>
     );
@@ -359,7 +359,7 @@ function Receipt({ url, number }: { url: string | null; number: number }) {
   return (
     <a href={url} target="_blank" rel="noreferrer" className="shrink-0" aria-label={`Receipt for order ${number}, full size`}>
       {/* eslint-disable-next-line @next/next/no-img-element -- see above */}
-      <img src={url} alt="" className="size-20 rounded border object-cover" />
+      <img src={url} alt="" className="size-20 rounded-sm bg-card object-cover" />
     </a>
   );
 }
@@ -377,7 +377,7 @@ async function StatusCounts() {
 
   if (!result.ok) {
     return (
-      <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+      <p className="mt-1.5 rounded-md bg-card px-3 py-4 text-muted-foreground">
         This account isn&apos;t an admin.
       </p>
     );

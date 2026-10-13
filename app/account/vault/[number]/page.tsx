@@ -88,7 +88,7 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
       </Link>
 
       <header className="mt-1">
-        <h1 className="text-2xl font-semibold leading-snug tracking-tight">{order.product_name}</h1>
+        <h1 className="heading-title">{order.product_name}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <StatusBadge tone={badge.tone} label={badge.label} />
           <Link href={`/account/orders/${order.number}`} className={`${textLinkClass} font-mono`}>
@@ -101,15 +101,15 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
           seller's words. No words, no box; nothing is made up to fill it. */}
       {!refunded && entry.warranty_warning && (
         <section aria-labelledby="warning-heading" className="mt-6 rounded-lg border-2 border-foreground p-4">
-          <h2 id="warning-heading" className="text-base font-semibold">
+          <h2 id="warning-heading" className="heading-section">
             What voids your warranty
           </h2>
           <p className="mt-1 whitespace-pre-line text-sm">{entry.warranty_warning}</p>
         </section>
       )}
 
-      <section aria-labelledby="credential-heading" className="mt-6 rounded-lg border bg-card p-4">
-        <h2 id="credential-heading" className="mb-3 text-base font-semibold">
+      <section aria-labelledby="credential-heading" className="mt-6 surface p-4">
+        <h2 id="credential-heading" className="mb-3 heading-section">
           {credentialKindLabel[entry.kind]}
         </h2>
         {refunded ? (
@@ -125,7 +125,7 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
 
       {!refunded && entry.setup_instructions && (
         <section aria-labelledby="setup-heading" className="mt-6">
-          <h2 id="setup-heading" className="text-base font-semibold">
+          <h2 id="setup-heading" className="heading-section">
             Setting it up
           </h2>
           <p className="mt-1 whitespace-pre-line text-sm">{entry.setup_instructions}</p>
@@ -133,10 +133,10 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
       )}
 
       <section aria-labelledby="details-heading" className="mt-6">
-        <h2 id="details-heading" className="text-base font-semibold">
+        <h2 id="details-heading" className="heading-section">
           Details
         </h2>
-        <dl className="mt-2 divide-y rounded-lg border text-sm">
+        <dl className="mt-2 surface divide-y divide-foreground/10 text-sm">
           {details.map(({ term, detail }) => (
             <div key={term} className="flex justify-between gap-3 px-4 py-2.5">
               <dt className="text-muted-foreground">{term}</dt>

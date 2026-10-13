@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 const link =
-  "rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "text-link";
 
 // A real sequence, so it's numbered. Every step here is something the store
 // actually does; nothing is promised that the order page can't show.
@@ -36,20 +36,20 @@ const steps = [
 
 export default function HowItWorksPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6">
-      <h1 className="text-2xl font-semibold tracking-tight">How it works</h1>
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
+      <h1 className="heading-title">How it works</h1>
 
       <ol className="mt-5 grid gap-4">
         {steps.map((step, i) => (
           <li key={step.title} className="flex gap-3">
             <span
               aria-hidden
-              className="flex size-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold tabular-nums"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-card text-sm font-semibold tabular-nums"
             >
               {i + 1}
             </span>
             <div className="max-w-prose">
-              <h2 className="font-semibold">{step.title}</h2>
+              <h2 className="font-heading text-lg">{step.title}</h2>
               <p className="mt-0.5 text-muted-foreground">{step.body}</p>
             </div>
           </li>
@@ -57,7 +57,7 @@ export default function HowItWorksPage() {
       </ol>
 
       <section aria-labelledby="methods" className="mt-8">
-        <h2 id="methods" className="text-lg font-semibold">
+        <h2 id="methods" className="heading-section">
           Ways to pay
         </h2>
         <Suspense fallback={<p className="mt-2 text-sm text-muted-foreground">Loading…</p>}>
@@ -66,7 +66,7 @@ export default function HowItWorksPage() {
       </section>
 
       <section aria-labelledby="problems" className="mt-8 max-w-prose">
-        <h2 id="problems" className="text-lg font-semibold">
+        <h2 id="problems" className="heading-section">
           If something goes wrong
         </h2>
         <dl className="mt-2 grid gap-3">
@@ -111,7 +111,7 @@ async function PaymentMethods() {
   return (
     <ul className="mt-2 flex flex-wrap gap-2">
       {methods.map((method) => (
-        <li key={method} className="rounded-md border bg-card px-3 py-1.5 text-sm font-medium">
+        <li key={method} className="rounded-md bg-card px-3 py-1.5 text-sm font-medium">
           {paymentMethodLabel[method]}
         </li>
       ))}

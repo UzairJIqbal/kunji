@@ -47,10 +47,10 @@ async function Checkout({ params }: Pick<PageProps<"/checkout/[planId]">, "param
       <Link href={`/products/${product.slug}`} className={`${textLinkClass} text-sm`}>
         Back to {product.name}
       </Link>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight">Checkout</h1>
+      <h1 className="mt-1 heading-title">Checkout</h1>
 
-      <section aria-label="Your order" className="mt-4 rounded-lg border bg-card p-4">
-        <p className="text-lg font-semibold leading-snug">{product.name}</p>
+      <section aria-label="Your order" className="mt-4 surface p-4">
+        <p className="font-heading text-xl leading-snug">{product.name}</p>
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           {facts.map(({ term, detail }) => (
             <div key={term} className="min-w-0">
@@ -59,9 +59,9 @@ async function Checkout({ params }: Pick<PageProps<"/checkout/[planId]">, "param
             </div>
           ))}
         </dl>
-        <div className="mt-3 flex items-baseline justify-between gap-3 border-t pt-3">
+        <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-foreground/10 pt-3">
           <span className="text-sm text-muted-foreground">Price</span>
-          <span className="text-2xl font-semibold tracking-tight tabular-nums">
+          <span className="heading-title tabular-nums">
             {formatRupees(plan.sell_price)}
           </span>
         </div>
@@ -69,7 +69,7 @@ async function Checkout({ params }: Pick<PageProps<"/checkout/[planId]">, "param
 
       <div className="mt-6">
         {product.sold_out ? (
-          <p className="rounded-lg border px-4 py-6 text-center">
+          <p className="rounded-lg bg-raised px-4 py-6 text-center">
             Sold out for now. This plan can&apos;t be ordered until it&apos;s back in stock.
           </p>
         ) : (

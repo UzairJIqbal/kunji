@@ -14,11 +14,11 @@ export default function NewProductPage() {
     <main className="mt-3 max-w-2xl">
       <Link
         href="/admin/products"
-        className="rounded-sm text-xs font-medium text-primary underline-offset-4 hover:underline"
+        className="text-link text-xs"
       >
         Products
       </Link>
-      <h1 className="mt-1 text-sm font-semibold">New product</h1>
+      <h1 className="mt-1 font-heading text-xl leading-tight">New product</h1>
       <p className="mt-0.5 text-muted-foreground">
         It starts hidden. Add its plans on the next page, then show it.
       </p>

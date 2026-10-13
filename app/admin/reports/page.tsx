@@ -26,7 +26,7 @@ const th = "py-1 pr-3 font-medium";
 const thNum = "py-1 pl-3 text-right font-medium";
 const td = "py-0.5 pr-3";
 const tdNum = "py-0.5 pl-3 text-right font-mono tabular-nums";
-const empty = "mt-1.5 rounded-md border border-dashed px-3 py-3 text-muted-foreground";
+const empty = "mt-1.5 rounded-md bg-card px-3 py-3 text-muted-foreground";
 
 const waitStepLabel: Record<string, string> = {
   proof_to_approved: "Proof sent to approved",
@@ -39,7 +39,7 @@ const WAIT_STEPS = ["proof_to_approved", "approved_to_bought", "bought_to_delive
 export default function ReportsPage({ searchParams }: PageProps<"/admin/reports">) {
   return (
     <main className="mt-3">
-      <h1 className="text-sm font-semibold">Reports</h1>
+      <h1 className="font-heading text-xl leading-tight">Reports</h1>
       <Suspense fallback={<p className="mt-2 text-muted-foreground">Adding up…</p>}>
         <PeriodReport searchParams={searchParams} />
       </Suspense>
@@ -60,7 +60,7 @@ async function PeriodReport({ searchParams }: Pick<PageProps<"/admin/reports">, 
               key={p}
               href={`/admin/reports?period=${p}`}
               aria-current={p === period ? "page" : undefined}
-              className="rounded border px-2 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:border-foreground aria-[current=page]:font-semibold"
+              className="rounded-sm bg-secondary px-2 py-0.5 font-medium focus-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
             >
               {reportPeriodLabel[p]}
             </Link>
@@ -69,7 +69,7 @@ async function PeriodReport({ searchParams }: Pick<PageProps<"/admin/reports">, 
         {/* A plain link: the file is made on the server with the seller's own session. */}
         <a
           href={`/admin/reports/export?period=${period}`}
-          className="font-medium text-primary underline-offset-4 hover:underline"
+          className="text-link"
         >
           Download this period&apos;s orders (CSV)
         </a>

@@ -42,7 +42,7 @@ async function Report({ params }: Pick<PageProps<"/account/orders/[number]/repor
       <Link href={back} className={`${textLinkClass} text-sm`}>
         Back to order <span className="font-mono">#{order.number}</span>
       </Link>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight">Report a problem</h1>
+      <h1 className="mt-1 heading-title">Report a problem</h1>
       <p className="mt-1 mb-5 text-muted-foreground">
         With your {order.product_name}. We&apos;ll reply here, on your order.
       </p>

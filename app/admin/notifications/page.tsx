@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Notifications · Admin · Kunji" };
 export default function NotificationsPage() {
   return (
     <main className="mt-3 max-w-3xl">
-      <h1 className="text-sm font-semibold">Notifications</h1>
+      <h1 className="font-heading text-xl leading-tight">Notifications</h1>
       <p className="mt-0.5 text-muted-foreground">
         How you hear that a customer has sent payment proof. They only tell you; every payment is
         still approved in the queue.

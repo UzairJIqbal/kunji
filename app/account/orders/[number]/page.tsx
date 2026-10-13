@@ -82,7 +82,7 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
       <header className="mt-1">
         {order.activation_email ? (
           <>
-            <h1 className="text-2xl font-semibold leading-snug tracking-tight">
+            <h1 className="heading-title">
               Your {order.product_name} will be activated on{" "}
               <span className="break-all">{order.activation_email}</span>
             </h1>
@@ -93,7 +93,7 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
             )}
           </>
         ) : (
-          <h1 className="text-2xl font-semibold leading-snug tracking-tight">{order.product_name}</h1>
+          <h1 className="heading-title">{order.product_name}</h1>
         )}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <span className="font-mono">Order #{order.number}</span>
@@ -104,8 +104,8 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
       {/* Appears the moment the seller delivers: the live listener refreshes
           the page when the order moves to delivered. */}
       {order.inVault && (
-        <section aria-labelledby="vault-heading" className="mt-6 rounded-lg border bg-card p-4">
-          <h2 id="vault-heading" className="text-base font-semibold">
+        <section aria-labelledby="vault-heading" className="mt-6 surface p-4">
+          <h2 id="vault-heading" className="heading-section">
             Delivered to your vault
           </h2>
           <Link href={`/account/vault/${order.number}`} className={`mt-3 ${primaryButtonClass}`}>
@@ -132,7 +132,7 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
 
       {order.status === "rejected" && order.rejection && (
         <section aria-labelledby="rejected-heading" className="mt-6 rounded-lg border border-danger p-4 text-sm">
-          <h2 id="rejected-heading" className="text-base font-semibold text-danger">
+          <h2 id="rejected-heading" className="heading-section text-danger">
             We couldn&apos;t confirm your payment
           </h2>
           <p className="mt-1">Reason: {order.rejection.reason}</p>
@@ -147,8 +147,8 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
       )}
 
       {order.refund && (
-        <section aria-labelledby="refund-heading" className="mt-6 rounded-lg border bg-card p-4">
-          <h2 id="refund-heading" className="text-base font-semibold">
+        <section aria-labelledby="refund-heading" className="mt-6 surface p-4">
+          <h2 id="refund-heading" className="heading-section">
             Refunded {formatRupees(order.refund.amount)}
           </h2>
           {order.outOfStock && (
@@ -179,7 +179,7 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
             Pay for this order
           </h2>
           {expired ? (
-            <p className="mb-4 rounded-lg border px-4 py-3 text-sm">
+            <p className="mb-4 rounded-lg bg-raised px-4 py-3 text-sm">
               This order expired at {formatPakistanTime(order.expires_at)}.{" "}
               <strong className="font-semibold">Already paid? Submit your proof anyway.</strong>
             </p>
@@ -195,7 +195,7 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
               accounts={accounts}
             />
           ) : (
-            <p className="rounded-lg border px-4 py-6 text-center">
+            <p className="rounded-lg bg-raised px-4 py-6 text-center">
               No payment account is open right now.{" "}
               <a href={help} className={textLinkClass}>
                 Message us on WhatsApp
@@ -207,8 +207,8 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
       )}
 
       {order.payment && (
-        <section aria-labelledby="proof-heading" className="mt-6 rounded-lg border bg-card p-4">
-          <h2 id="proof-heading" className="text-base font-semibold">
+        <section aria-labelledby="proof-heading" className="mt-6 surface p-4">
+          <h2 id="proof-heading" className="heading-section">
             Your proof of payment
           </h2>
           <dl className="mt-2 grid gap-2 text-sm">
@@ -234,10 +234,10 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
       )}
 
       <section aria-labelledby="details-heading" className="mt-6">
-        <h2 id="details-heading" className="text-base font-semibold">
+        <h2 id="details-heading" className="heading-section">
           Order details
         </h2>
-        <dl className="mt-2 divide-y rounded-lg border text-sm">
+        <dl className="mt-2 surface divide-y divide-foreground/10 text-sm">
           {details.map(({ term, detail }) => (
             <div key={term} className="flex justify-between gap-3 px-4 py-2.5">
               <dt className="text-muted-foreground">{term}</dt>
@@ -248,7 +248,7 @@ async function Order({ params }: Pick<PageProps<"/account/orders/[number]">, "pa
       </section>
 
       <section aria-labelledby="timeline-heading" className="mt-6">
-        <h2 id="timeline-heading" className="text-base font-semibold">
+        <h2 id="timeline-heading" className="heading-section">
           Timeline
         </h2>
         <ol className="mt-2 grid gap-2 border-l pl-4 text-sm">

@@ -29,7 +29,7 @@ async function FixEmail({ params }: Pick<PageProps<"/account/orders/[number]/ema
       <Link href={back} className={`${textLinkClass} text-sm`}>
         Back to order <span className="font-mono">#{order.number}</span>
       </Link>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight">Fix activation email</h1>
+      <h1 className="mt-1 heading-title">Fix activation email</h1>
       {order.status === "awaiting_payment" && order.activation_email ? (
         <>
           <p className="mt-1 mb-5 text-muted-foreground">

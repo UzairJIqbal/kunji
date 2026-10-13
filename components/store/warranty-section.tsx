@@ -39,7 +39,7 @@ export function WarrantySection({
     <section aria-labelledby="warranty-heading" className="mt-6">
       {/* A ticket opening elsewhere, or the seller closing one, shows here. */}
       <LiveTickets orderId={orderId} />
-      <h2 id="warranty-heading" className="text-base font-semibold">
+      <h2 id="warranty-heading" className="heading-section">
         Problem with it?
       </h2>
 
@@ -67,7 +67,7 @@ export function WarrantySection({
       )}
 
       {closed.length > 0 && (
-        <ul className="mt-4 divide-y rounded-lg border text-sm">
+        <ul className="mt-4 surface divide-y divide-foreground/10 text-sm">
           {closed.map((ticket) => {
             const status = customerTicketStatus[ticket.status];
             return (
@@ -89,10 +89,10 @@ export function WarrantySection({
 function OpenTicket({ ticket }: { ticket: OrderTicket }) {
   const status = customerTicketStatus[ticket.status];
   return (
-    <div className="mt-2 grid gap-4 rounded-lg border bg-card p-4">
+    <div className="mt-2 grid gap-4 surface p-4">
       <LiveTickets ticketId={ticket.id} />
       <div>
-        <p className="text-base font-semibold">
+        <p className="text-base">
           <StatusBadge tone={status.tone} label={status.label} />
         </p>
         <p className="mt-1 text-sm">

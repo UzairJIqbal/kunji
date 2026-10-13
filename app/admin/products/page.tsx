@@ -20,10 +20,10 @@ export default function ProductsPage() {
   return (
     <main className="mt-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h1 className="text-sm font-semibold">Products</h1>
+        <h1 className="font-heading text-xl leading-tight">Products</h1>
         <Link
           href="/admin/products/new"
-          className="rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="text-link"
         >
           New product
         </Link>
@@ -41,7 +41,7 @@ async function ProductList() {
 
   if (products.length === 0) {
     return (
-      <p className="mt-3 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+      <p className="mt-3 rounded-md bg-card px-3 py-4 text-muted-foreground">
         No products yet. Add the first one with New product.
       </p>
     );
@@ -76,7 +76,7 @@ async function ProductList() {
             <li key={product.id} className={row}>
               <Link
                 href={`/admin/products/${product.id}`}
-                className="min-w-0 basis-full truncate font-medium text-primary underline-offset-4 hover:underline sm:basis-auto"
+                className="text-link min-w-0 basis-full truncate sm:basis-auto"
               >
                 {product.name}
               </Link>

@@ -36,7 +36,7 @@ export function AwayBanner({ initial }: { initial: StoreSettings }) {
 
   if (!settings.away || !settings.back_at) return null;
   return (
-    <p role="status" className="border-b bg-muted px-4 py-2 text-center text-sm font-medium text-warning">
+    <p role="status" className="bg-muted px-4 py-2 text-center text-sm font-medium text-warning">
       {awayMessage(settings.back_at)}
     </p>
   );

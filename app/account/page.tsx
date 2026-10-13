@@ -23,7 +23,7 @@ export default function AccountPage() {
       </Suspense>
 
       <section id="orders" aria-labelledby="orders-heading" className="mt-8">
-        <h2 id="orders-heading" className="text-base font-semibold">
+        <h2 id="orders-heading" className="heading-section">
           Orders
         </h2>
         <Suspense fallback={<p className="mt-3 text-sm text-muted-foreground">Loading orders…</p>}>
@@ -32,7 +32,7 @@ export default function AccountPage() {
       </section>
 
       <section id="vault" aria-labelledby="vault-heading" className="mt-8">
-        <h2 id="vault-heading" className="text-base font-semibold">
+        <h2 id="vault-heading" className="heading-section">
           Vault
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -55,11 +55,11 @@ async function OrderList() {
 
   if (orders.length === 0) {
     return (
-      <div className="mt-3 rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+      <div className="mt-3 empty-state">
         <p>You haven&apos;t ordered anything yet.</p>
         <Link
           href="/"
-          className="mt-2 inline-block font-medium text-primary underline-offset-4 hover:underline"
+          className="text-link mt-2 inline-block"
         >
           Browse the store
         </Link>
@@ -71,7 +71,7 @@ async function OrderList() {
   const now = new Date();
 
   return (
-    <ul className="mt-3 divide-y rounded-lg border">
+    <ul className="mt-3 surface divide-y divide-foreground/10">
       {orders.map((order) => {
         const status = customerOrderStatus(order, now);
         return (
@@ -81,7 +81,7 @@ async function OrderList() {
               className="block px-4 py-3 text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
             >
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-medium text-primary">{order.product_name}</span>
+                <span className="font-heading text-base">{order.product_name}</span>
                 <span className="shrink-0 tabular-nums">{formatRupees(order.price)}</span>
               </div>
               <div className="mt-1 flex items-baseline justify-between gap-3">
@@ -105,7 +105,7 @@ async function Vault() {
 
   if (entries.length === 0) {
     return (
-      <p className="mt-3 rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+      <p className="mt-3 empty-state">
         Nothing in your vault yet. It fills when an order is delivered.
       </p>
     );
@@ -130,7 +130,7 @@ async function Vault() {
       {current.length > 0 ? (
         <VaultList rows={current} now={now} />
       ) : (
-        <p className="mt-3 rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+        <p className="mt-3 empty-state">
           Nothing current. Your expired subscriptions are below.
         </p>
       )}
@@ -152,7 +152,7 @@ function VaultList({
   now: Date;
 }) {
   return (
-    <ul className="mt-3 divide-y rounded-lg border">
+    <ul className="mt-3 surface divide-y divide-foreground/10">
       {rows.map(({ entry, expiresAt, standing }) => {
         const badge = vaultStandingBadge[standing];
         return (
@@ -162,7 +162,7 @@ function VaultList({
               className="block px-4 py-3 text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
             >
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-medium text-primary">{entry.orders.product_name}</span>
+                <span className="font-heading text-base">{entry.orders.product_name}</span>
                 <span className="shrink-0 text-muted-foreground">{credentialKindLabel[entry.kind]}</span>
               </div>
               <div className="mt-1 flex items-baseline justify-between gap-3">
@@ -192,7 +192,7 @@ async function Greeting() {
     user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "there";
   return (
     <header>
-      <h1 className="text-2xl font-semibold tracking-tight">Your account</h1>
+      <h1 className="heading-title">Your account</h1>
       <p className="mt-1 text-muted-foreground">Signed in as {name}</p>
     </header>
   );

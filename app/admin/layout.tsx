@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 const linkClass =
-  "rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "text-link";
 
 // A dense working tool, not a storefront: small type, tight rows.
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
     <div className="mx-auto w-full max-w-5xl px-3 py-4 text-[13px] leading-5">
-      <nav aria-label="Admin" className="flex flex-wrap gap-x-4 gap-y-1 border-b pb-2">
+      <nav aria-label="Admin" className="flex flex-wrap gap-x-4 gap-y-1 border-b border-foreground/10 pb-2">
         <Link href="/admin" className={linkClass}>
           Orders
         </Link>

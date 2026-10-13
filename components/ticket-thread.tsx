@@ -36,7 +36,7 @@ export function TicketThread({
         return (
           <li
             key={message.id}
-            className={`rounded-lg border ${dense ? "px-2 py-1" : "px-3 py-2"} ${mine ? "ml-6 bg-muted" : "mr-6 bg-card"}`}
+            className={`rounded-lg ${dense ? "px-2 py-1" : "px-3 py-2"} ${mine ? "ml-6 bg-secondary" : "mr-6 bg-raised"}`}
           >
             <p className={`${dense ? "text-xs" : "text-sm"} text-muted-foreground`}>
               <span className="font-medium text-foreground">{who(message.from_seller)}</span>,{" "}

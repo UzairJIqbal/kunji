@@ -33,7 +33,7 @@ export function RevealCredential({
   }
 
   const buttonClass = compact
-    ? "inline-flex h-7 items-center rounded-md border px-2 text-xs font-medium text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
+    ? "inline-flex h-7 items-center rounded-md bg-secondary px-2 text-xs font-medium text-secondary-foreground hover:bg-secondary/70 focus-ring disabled:opacity-60"
     : primaryButtonClass;
 
   if (!credential) {
@@ -88,8 +88,8 @@ export function RevealCredential({
         onClick={() => setCredential(null)}
         className={
           compact
-            ? "mt-1.5 text-xs font-medium text-primary underline-offset-4 hover:underline"
-            : "mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+            ? "text-link mt-1.5 text-xs"
+            : "text-link mt-3 inline-flex min-h-11 items-center text-sm"
         }
       >
         Hide

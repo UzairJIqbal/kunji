@@ -34,7 +34,7 @@ export function ReviewForm({
           {ratings.map((n) => (
             <label
               key={n}
-              className="flex min-h-12 cursor-pointer items-center justify-center gap-1 rounded-lg border bg-card text-base font-medium has-checked:border-primary has-checked:ring-1 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
+              className="flex min-h-12 cursor-pointer items-center justify-center gap-1 surface text-base font-medium has-checked:bg-raised has-checked:ring-2 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
             >
               <input
                 type="radio"

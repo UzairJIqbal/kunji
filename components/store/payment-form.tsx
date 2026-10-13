@@ -56,11 +56,11 @@ export function PaymentForm({
   return (
     <form action={formAction} onSubmit={submit} noValidate className="grid gap-5">
       <fieldset className="grid gap-2">
-        <legend className="mb-2 text-base font-semibold">1. Choose where you&apos;ll pay</legend>
+        <legend className="mb-2 heading-section">1. Choose where you&apos;ll pay</legend>
         {accounts.map((account) => (
           <label
             key={account.id}
-            className="flex min-h-14 cursor-pointer items-center gap-3 rounded-lg border bg-card px-3 py-2 has-checked:border-primary has-checked:ring-1 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
+            className="flex min-h-14 cursor-pointer items-center gap-3 surface px-3 py-2 has-checked:bg-raised has-checked:ring-2 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
           >
             <input
               type="radio"
@@ -84,8 +84,8 @@ export function PaymentForm({
       </fieldset>
 
       {chosen && (
-        <section aria-labelledby="send-heading" className="rounded-lg border bg-card p-4">
-          <h3 id="send-heading" className="text-base font-semibold">
+        <section aria-labelledby="send-heading" className="surface p-4">
+          <h3 id="send-heading" className="heading-section">
             2. Send exactly
           </h3>
           <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">{amount}</p>
@@ -111,7 +111,7 @@ export function PaymentForm({
       )}
 
       <fieldset className="grid gap-4">
-        <legend className="mb-1 text-base font-semibold">3. Tell us you&apos;ve paid</legend>
+        <legend className="mb-1 heading-section">3. Tell us you&apos;ve paid</legend>
 
         <div className="grid gap-1">
           <label htmlFor="transactionId" className={storeLabelClass}>
@@ -159,7 +159,7 @@ export function PaymentForm({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={() => setTooBig(false)}
-            className="block w-full min-w-0 text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border file:bg-background file:px-3 file:text-sm file:font-medium file:text-primary"
+            className="block w-full min-w-0 text-sm file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:text-sm file:font-medium file:text-secondary-foreground"
             {...invalidProps("receipt", receiptErrors)}
           />
           <p className={storeHintClass}>JPEG, PNG or WebP, up to 5 MB. Only you and the seller can see it.</p>

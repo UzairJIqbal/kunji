@@ -36,11 +36,11 @@ export function TicketForm({ action }: { action: (prev: FormState, formData: For
   return (
     <form action={formAction} onSubmit={submit} noValidate className="grid gap-5">
       <fieldset className="grid gap-2" {...invalidProps("reason", errors.reason)}>
-        <legend className="mb-2 text-base font-semibold">What&apos;s wrong?</legend>
+        <legend className="mb-2 heading-section">What&apos;s wrong?</legend>
         {ticketReasons.map((reason) => (
           <label
             key={reason}
-            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border bg-card px-3 has-checked:border-primary has-checked:ring-1 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
+            className="flex min-h-12 cursor-pointer items-center gap-3 surface px-3 has-checked:bg-raised has-checked:ring-2 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
           >
             <input
               type="radio"
@@ -80,7 +80,7 @@ export function TicketForm({ action }: { action: (prev: FormState, formData: For
           type="file"
           accept="image/jpeg,image/png,image/webp"
           onChange={() => setTooBig(false)}
-          className="block w-full min-w-0 text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border file:bg-background file:px-3 file:text-sm file:font-medium file:text-primary"
+          className="block w-full min-w-0 text-sm file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:text-sm file:font-medium file:text-secondary-foreground"
           {...invalidProps("screenshot", screenshotErrors)}
         />
         <p className={storeHintClass}>JPEG, PNG or WebP, up to 5 MB. Only you and the seller can see it.</p>

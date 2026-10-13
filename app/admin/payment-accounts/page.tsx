@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Payment accounts · Admin · Kunji" 
 export default function PaymentAccountsPage() {
   return (
     <main className="mt-3 max-w-3xl">
-      <h1 className="text-sm font-semibold">Payment accounts</h1>
+      <h1 className="font-heading text-xl leading-tight">Payment accounts</h1>
       <p className="mt-0.5 text-muted-foreground">
         The wallet and bank accounts customers pay into. Switched-off accounts aren&apos;t shown
         at checkout.

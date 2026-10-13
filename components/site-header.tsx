@@ -6,16 +6,17 @@ import { ThemeControl } from "@/components/theme-control";
 import { viewerSeesAdminRows } from "@/lib/data/admin";
 
 const navLinkClass =
-  "inline-flex h-9 items-center rounded-md px-2.5 text-sm font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "inline-flex h-9 items-center rounded-md px-2.5 text-sm font-medium hover:bg-muted focus-ring";
 
-// One line at 360px: name on the left, everything else packed right.
+// The design's floating white bar. One line at 360px: name on the left,
+// everything else packed right.
 export function SiteHeader() {
   return (
-    <header className="border-b bg-background">
-      <div className="mx-auto flex h-14 max-w-3xl items-center gap-1 px-4">
+    <header className="px-2 pt-2 sm:px-4 sm:pt-4">
+      <div className="mx-auto flex h-14 max-w-5xl items-center gap-1 rounded-md bg-raised px-3 shadow-raised sm:px-5">
         <Link
           href="/"
-          className="mr-auto rounded-sm text-[17px] font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="mr-auto rounded-sm font-heading text-2xl leading-none focus-ring"
         >
           Kunji
         </Link>
@@ -32,7 +33,7 @@ export function SiteHeader() {
             <SignInButton>
               <button
                 type="button"
-                className="ml-1 inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="btn-primary ml-1 h-9 px-3 text-sm"
               >
                 Sign in
               </button>

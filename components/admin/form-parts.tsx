@@ -6,9 +6,9 @@ import { type FormState, emptyFormState } from "@/lib/catalogue";
 // Dense admin inputs. A red border is the only colour, and only on a field the
 // server refused.
 export const inputClass =
-  "h-8 w-full min-w-0 rounded-md border border-input bg-background px-2 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring aria-invalid:border-danger";
+  "field h-8 px-2 text-[13px]";
 export const textareaClass =
-  "w-full min-w-0 rounded-md border border-input bg-background px-2 py-1.5 text-[13px] leading-5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring aria-invalid:border-danger";
+  "field px-2 py-1.5 text-[13px] leading-5";
 export const labelClass = "text-xs font-medium";
 
 // Submits through a transition instead of letting the form post itself, because

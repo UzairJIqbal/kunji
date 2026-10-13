@@ -85,14 +85,14 @@ function RejectFields({
   const errors = state.fieldErrors;
 
   return (
-    <form action={formAction} onSubmit={onSubmit} noValidate className="w-full rounded-md border p-2">
+    <form action={formAction} onSubmit={onSubmit} noValidate className="w-full rounded-md bg-card p-2">
       <fieldset {...invalidProps(`${id}-reason`, errors.reason)}>
         <legend className={labelClass}>Why is it rejected?</legend>
         <div className="mt-1 flex flex-wrap gap-1.5">
           {[...rejectReasons, OTHER_REASON].map((value) => (
             <label
               key={value}
-              className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border px-2 text-xs has-checked:border-foreground has-checked:font-medium"
+              className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-input bg-raised px-2 text-xs has-checked:border-primary has-checked:ring-1 has-checked:ring-primary has-checked:font-medium"
             >
               <input
                 type="radio"

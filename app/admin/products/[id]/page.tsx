@@ -29,7 +29,7 @@ export default function EditProductPage({ params }: PageProps<"/admin/products/[
     <main className="mt-3 max-w-2xl">
       <Link
         href="/admin/products"
-        className="rounded-sm text-xs font-medium text-primary underline-offset-4 hover:underline"
+        className="text-link text-xs"
       >
         Products
       </Link>
@@ -57,7 +57,7 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <header className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 className="text-sm font-semibold">{product.name}</h1>
+        <h1 className="font-heading text-xl leading-tight">{product.name}</h1>
         <span>
           {product.active ? "Listed" : <span className="text-muted-foreground">Hidden</span>}
           {product.sold_out && <span className="text-warning">, sold out</span>}
@@ -121,7 +121,7 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
                   {formatWarranty(plan.warranty_days)}
                   <Link
                     href={`/admin/stock/${plan.id}`}
-                    className="rounded-sm font-medium text-primary underline-offset-4 hover:underline"
+                    className="text-link"
                   >
                     Stock
                   </Link>
@@ -154,7 +154,7 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
                       href={details.numastore_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-sm font-medium text-primary underline-offset-4 hover:underline"
+                      className="text-link inline-flex items-center gap-1"
                     >
                       Open on numastore
                       <ExternalLink aria-hidden className="size-3" />

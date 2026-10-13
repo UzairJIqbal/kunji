@@ -41,7 +41,7 @@ export async function generateMetadata({
 
 export default function ProductPage({ params }: PageProps<"/products/[slug]">) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
         <Product params={params} />
       </Suspense>
@@ -68,36 +68,36 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
     <article>
       <Link
         href={`/?category=${encodeURIComponent(product.category)}`}
-        className="inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="text-link inline-flex min-h-11 items-center text-sm"
       >
         More in {product.category}
       </Link>
 
-      <div className="mt-1 flex gap-4">
+      <div className="mt-3 flex gap-4">
         <ProductImage path={product.image_path} name={product.name} size={80} eager />
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight">{product.name}</h1>
+          <h1 className="heading-title">{product.name}</h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             <Price summary={summary} />
             <ProductBadges isNew={isNew(new Date(product.created_at), now)} soldOut={product.sold_out} />
           </div>
-          <a href="#reviews-heading" className="inline-flex min-h-11 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+          <a href="#reviews-heading" className="inline-flex min-h-11 items-center rounded-sm focus-ring">
             <RatingSummary rating={rating} />
           </a>
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border bg-card p-3">
+      <div className="surface mt-6 p-4">
         <HonestFacts accountType={product.account_type} summary={summary} extra={extra} />
-        <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">{deliverySentence(summary.instant)}</p>
+        <p className="mt-4 border-t border-foreground/10 pt-4 text-sm text-muted-foreground">{deliverySentence(summary.instant)}</p>
       </div>
 
       {product.description.trim() && (
-        <p className="mt-5 max-w-prose whitespace-pre-line leading-relaxed">{product.description}</p>
+        <p className="mt-6 max-w-prose whitespace-pre-line leading-relaxed">{product.description}</p>
       )}
 
-      <section aria-labelledby="plans-heading" className="mt-6">
-        <h2 id="plans-heading" className="text-base font-semibold">
+      <section aria-labelledby="plans-heading" className="mt-10">
+        <h2 id="plans-heading" className="heading-section">
           Plans
         </h2>
         {product.sold_out && (
@@ -105,11 +105,11 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
             Sold out for now. These plans can&apos;t be ordered until it&apos;s back in stock.
           </p>
         )}
-        <ul className="mt-2 grid gap-2">
+        <ul className="mt-3 grid gap-2">
           {product.plans.map((plan) => (
             <li
               key={plan.id}
-              className="flex min-h-16 items-center gap-3 rounded-lg border bg-card px-3 py-2.5"
+              className="surface flex min-h-16 items-center gap-3 px-4 py-3"
             >
               <span className="min-w-0 flex-1">
                 <span className="block font-medium">{formatDays(plan.duration_days)}</span>
@@ -132,7 +132,7 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
                 <Link
                   href={`/checkout/${plan.id}`}
                   aria-label={`Buy ${formatDays(plan.duration_days)} for ${formatRupees(plan.sell_price)}`}
-                  className="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  className="btn-primary min-h-11 shrink-0 text-sm"
                 >
                   Buy
                 </Link>
@@ -142,17 +142,17 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
         </ul>
       </section>
 
-      <section aria-labelledby="reviews-heading" className="mt-8">
-        <h2 id="reviews-heading" className="scroll-mt-4 text-base font-semibold">
+      <section aria-labelledby="reviews-heading" className="mt-12">
+        <h2 id="reviews-heading" className="heading-section scroll-mt-4">
           Reviews
         </h2>
         <div className="mt-1">
           <RatingSummary rating={rating} />
         </div>
         {reviews.length > 0 && (
-          <ul className="mt-3 divide-y border-y">
+          <ul className="mt-4 divide-y border-y">
             {reviews.map((review) => (
-              <li key={review.id} className="py-3">
+              <li key={review.id} className="py-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                   <span className="font-medium">{reviewerLabel(review.reviewer_name)}</span>
                   <Stars rating={review.rating} />
