@@ -9,6 +9,21 @@ export const DELIVERY_SHORT = "Usually 30 min, 10am to midnight";
 export const DELIVERY_SENTENCE =
   "Delivered to your vault by hand, usually within 30 minutes, 10am to midnight.";
 
+// A plan with a login already bought and waiting is delivered in the same tap
+// that approves the payment. Said only when every plan in view has one, so it
+// never promises more than the plan the customer picks.
+export const INSTANT_SHORT = "Instant delivery, 10am to midnight";
+export const INSTANT_SENTENCE =
+  "Delivered to your vault the moment your payment is approved, 10am to midnight.";
+
+export function deliveryShort(instant: boolean): string {
+  return instant ? INSTANT_SHORT : DELIVERY_SHORT;
+}
+
+export function deliverySentence(instant: boolean): string {
+  return instant ? INSTANT_SENTENCE : DELIVERY_SENTENCE;
+}
+
 // "New" is a fact about the listing: added in the last two weeks.
 const NEW_FOR_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -17,7 +32,14 @@ export function isNew(createdAt: Date, now: Date): boolean {
   return now.getTime() - createdAt.getTime() < NEW_FOR_DAYS * DAY_MS;
 }
 
-export type PricedPlan = { duration_days: number; warranty_days: number; sell_price: number };
+// `instant_until` is when the stocked login that runs out first stops working:
+// null when the plan has none free and is bought by hand after payment.
+export type PricedPlan = {
+  duration_days: number;
+  warranty_days: number;
+  sell_price: number;
+  instant_until?: string | null;
+};
 
 export type PlanSummary = {
   lowestPrice: number;
@@ -25,6 +47,7 @@ export type PlanSummary = {
   pricesVary: boolean;
   duration: string;
   warranty: string;
+  instant: boolean;
 };
 
 // Null when there's nothing to sum up: a product with no priced plan has no
@@ -39,6 +62,7 @@ export function summarisePlans(plans: readonly PricedPlan[]): PlanSummary | null
     pricesVary: Math.min(...prices) !== Math.max(...prices),
     duration: dayRange(Math.min(...durations), Math.max(...durations)),
     warranty: warrantyRange(Math.min(...warranties), Math.max(...warranties)),
+    instant: plans.every((p) => Boolean(p.instant_until)),
   };
 }
 

@@ -16,11 +16,13 @@ export async function approvePayment(orderId: string, prev: FormState): Promise<
   if (!order.success) return failed(MALFORMED, prev);
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.rpc("approve_payment", { p_order_id: order.data });
+  // True when the plan had a free stock item: the same call took it, recorded
+  // it as bought and delivered it.
+  const { data: delivered, error } = await supabase.rpc("approve_payment", { p_order_id: order.data });
   if (error) return decisionFailure(error, prev);
 
   refresh();
-  return saved("Approved.", prev);
+  return saved(delivered ? "Approved and delivered from stock." : "Approved.", prev);
 }
 
 export async function rejectPayment(orderId: string, prev: FormState, formData: FormData): Promise<FormState> {

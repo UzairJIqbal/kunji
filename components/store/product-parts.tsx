@@ -2,7 +2,7 @@ import Image from "next/image";
 import { accountTypeLabel, type AccountType } from "@/lib/catalogue";
 import { formatRupees } from "@/lib/format";
 import { productImageUrl } from "@/lib/product-image";
-import { DELIVERY_SHORT, type PlanSummary } from "@/lib/storefront";
+import { type PlanSummary, deliveryShort } from "@/lib/storefront";
 
 // The pieces a card and a product page share, so the facts sit in the same
 // place, in the same words, on both.
@@ -91,7 +91,7 @@ export function HonestFacts({
     { term: "You get", detail: accountTypeLabel[accountType] },
     { term: "Duration", detail: summary.duration },
     { term: "Warranty", detail: summary.warranty },
-    { term: "Delivery", detail: DELIVERY_SHORT },
+    { term: "Delivery", detail: deliveryShort(summary.instant) },
     ...extra,
   ];
   return (

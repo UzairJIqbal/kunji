@@ -60,7 +60,8 @@ export async function revealCredential(orderId: string): Promise<RevealResult> {
   if (error || !data) return { ok: false, message: "This vault entry couldn't be found." };
 
   try {
-    const plain = decryptCredential(order.data, data.credential);
+    // Sealed to the order, or to the stock item it was delivered from.
+    const plain = decryptCredential(data.sealed_to, data.credential);
     return { ok: true, credential: parseCredential(plain, data.kind) };
   } catch {
     return { ok: false, message: "This vault entry couldn't be opened. Message us on WhatsApp." };

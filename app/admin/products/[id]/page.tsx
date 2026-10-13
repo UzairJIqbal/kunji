@@ -117,8 +117,14 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
             const stale = checkedAt !== null && isPriceCheckStale(checkedAt, now);
             return (
               <li key={plan.id} className="py-3">
-                <p className="mb-1.5 text-xs text-muted-foreground">
+                <p className="mb-1.5 flex gap-3 text-xs text-muted-foreground">
                   {formatWarranty(plan.warranty_days)}
+                  <Link
+                    href={`/admin/stock/${plan.id}`}
+                    className="rounded-sm font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    Stock
+                  </Link>
                 </p>
                 <PlanForm
                   action={updatePlan.bind(null, plan.id, product.id)}

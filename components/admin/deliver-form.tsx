@@ -9,7 +9,7 @@ import { FieldError, FormMessage, inputClass, invalidProps, labelClass, textarea
 // Off for every credential field: no autofill offering the seller's own
 // logins, no spellcheck sending what's typed to a dictionary service, and no
 // password manager offering to save the customer's password as the seller's.
-const secretProps = {
+export const secretProps = {
   autoComplete: "off",
   autoCorrect: "off",
   autoCapitalize: "off",

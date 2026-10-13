@@ -33,19 +33,44 @@ export async function listCatalogue() {
     .from("products")
     .select(
       `id, slug, name, category, account_type, image_path, sold_out, created_at,
-       plans!inner (duration_days, warranty_days, sell_price)`,
+       plans!inner (id, duration_days, warranty_days, sell_price)`,
     )
     .order("category")
     .order("name")
     .limit(CATALOGUE_LIMIT)
     .limit(PLANS_PER_PRODUCT_LIMIT, { referencedTable: "plans" });
   if (error) throw new Error(`Couldn't load the catalogue: ${error.message}`);
-  const ratings = await readRatings(data.map((product) => product.id));
+  const [ratings, instant] = await Promise.all([
+    readRatings(data.map((product) => product.id)),
+    readInstantPlans(data.flatMap((product) => product.plans.map((plan) => plan.id))),
+  ]);
   return data.map((product) => ({
     ...product,
-    plans: priced(product.plans),
+    plans: withInstant(priced(product.plans), instant),
     rating: ratings.get(product.id) ?? NO_RATING,
   }));
+}
+
+// ───────────────────────────── Stock ─────────────────────────────
+
+// Which plans have a stocked login waiting, and when the one that runs out
+// first stops working. Only that: the database function never says how many,
+// and the stock table itself isn't readable by the public at all.
+async function readInstantPlans(planIds: string[]): Promise<Map<string, string>> {
+  if (planIds.length === 0) return new Map();
+  const supabase = createPublicSupabase();
+  const { data, error } = await supabase.rpc("instant_plans", { p_plan_ids: planIds });
+  if (error) throw new Error(`Couldn't load delivery times: ${error.message}`);
+  return new Map(data.map((row) => [row.plan_id, row.least_expires_at]));
+}
+
+function withInstant<T extends { id: string }>(plans: T[], instant: Map<string, string>) {
+  return plans.map((plan) => ({ ...plan, instant_until: instant.get(plan.id) ?? null }));
+}
+
+// One plan, for checkout.
+export async function getPlanInstantUntil(planId: string): Promise<string | null> {
+  return (await readInstantPlans([planId])).get(planId) ?? null;
 }
 
 // ───────────────────────────── Ratings ─────────────────────────────
@@ -117,7 +142,9 @@ export const getProduct = cache(async (slug: string) => {
     .limit(PLANS_PER_PRODUCT_LIMIT, { referencedTable: "plans" })
     .maybeSingle();
   if (error) throw new Error(`Couldn't load the product: ${error.message}`);
-  return data && { ...data, plans: priced(data.plans) };
+  if (!data) return null;
+  const instant = await readInstantPlans(data.plans.map((plan) => plan.id));
+  return { ...data, plans: withInstant(priced(data.plans), instant) };
 });
 
 // The methods the seller takes right now, from their active accounts. Only the

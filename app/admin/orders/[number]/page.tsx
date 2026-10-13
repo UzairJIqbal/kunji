@@ -6,7 +6,7 @@ import { ActionButton } from "@/components/admin/action-button";
 import { BoughtForm } from "@/components/admin/buying-forms";
 import { DeliverForm } from "@/components/admin/deliver-form";
 import { NotAdmin } from "@/components/admin/not-admin";
-import { ApproveButton, RefundForm, RejectForm } from "@/components/admin/verification-forms";
+import { ApproveButton, DecisionNotices, RefundForm, RejectForm } from "@/components/admin/verification-forms";
 import { LiveOrders } from "@/components/live-orders";
 import { RevealCredential } from "@/components/vault/reveal-credential";
 import { StatusBadge } from "@/components/status-badge";
@@ -71,7 +71,7 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
   ];
 
   return (
-    <>
+    <DecisionNotices>
       <LiveOrders orderId={order.id} />
       <div className="flex flex-wrap items-baseline gap-x-3">
         <h1 className="font-mono text-sm font-semibold">Order #{order.number}</h1>
@@ -223,7 +223,7 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
             Decide
           </h2>
           <div className="mt-1.5 flex flex-wrap items-start gap-2">
-            <ApproveButton action={approvePayment.bind(null, order.id)} />
+            <ApproveButton number={order.number} action={approvePayment.bind(null, order.id)} />
             <RejectForm action={rejectPayment.bind(null, order.id)} />
           </div>
         </section>
@@ -236,7 +236,7 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
               Approve after all
             </h2>
             <div className="mt-1.5">
-              <ApproveButton action={approvePayment.bind(null, order.id)} />
+              <ApproveButton number={order.number} action={approvePayment.bind(null, order.id)} />
             </div>
           </div>
           {order.payment && (
@@ -422,7 +422,7 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[number]">, "para
           Back to the queue
         </Link>
       </p>
-    </>
+    </DecisionNotices>
   );
 }
 

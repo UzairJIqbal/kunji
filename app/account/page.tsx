@@ -114,7 +114,12 @@ async function Vault() {
   // Read after the entries, so expiry is judged at this request's time.
   const now = new Date();
   const rows = entries.map((entry) => {
-    const { expiresAt } = vaultDates(entry.delivered_at, entry.orders.duration_days, entry.orders.warranty_days);
+    const { expiresAt } = vaultDates(
+      entry.delivered_at,
+      entry.orders.duration_days,
+      entry.orders.warranty_days,
+      entry.expires_at,
+    );
     return { entry, expiresAt, standing: vaultStanding(expiresAt, now, entry.orders.status) };
   });
   const current = rows.filter((row) => !vaultEntryOver(row.standing));

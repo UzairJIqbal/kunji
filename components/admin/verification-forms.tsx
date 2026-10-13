@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { createContext, use, useActionState, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type FormState, type PaymentMethod, emptyFormState, paymentMethodLabel, paymentMethods } from "@/lib/catalogue";
 import { formatRupees } from "@/lib/format";
@@ -10,9 +10,41 @@ import { FieldError, FormMessage, inputClass, invalidProps, labelClass, useServe
 // Each order's controls are bound to its ID on the server; nothing the seller
 // could change here says what the price or state is.
 
-// One tap. On success the order leaves the queue, so only a refusal needs words.
-export function ApproveButton({ action }: { action: (prev: FormState) => Promise<FormState> }) {
-  const [state, formAction, pending] = useActionState(action, emptyFormState);
+type Decision = { number: number; message: string };
+const DecisionContext = createContext<((decision: Decision) => void) | null>(null);
+
+// An approved order leaves the queue, and its page drops the Approve button,
+// so the button can't say how it went: it is gone by the time the page has
+// re-read. This sits above both and keeps the last outcome, which is the only
+// place the seller learns it was delivered from stock rather than sent to buy.
+export function DecisionNotices({ children }: { children: React.ReactNode }) {
+  const [last, setLast] = useState<Decision | null>(null);
+  return (
+    <DecisionContext value={setLast}>
+      {last && (
+        <p role="status" className="mt-1.5 text-xs text-success">
+          <span className="font-mono">#{last.number}</span> {last.message}
+        </p>
+      )}
+      {children}
+    </DecisionContext>
+  );
+}
+
+// One tap. A refusal is said here; success goes to DecisionNotices.
+export function ApproveButton({
+  number,
+  action,
+}: {
+  number: number;
+  action: (prev: FormState) => Promise<FormState>;
+}) {
+  const report = use(DecisionContext);
+  const [state, formAction, pending] = useActionState(async (prev: FormState) => {
+    const next = await action(prev);
+    if (next.ok && next.message) report?.({ number, message: next.message });
+    return next;
+  }, emptyFormState);
   return (
     <form action={formAction} className="inline-flex flex-wrap items-center gap-1.5">
       <Button type="submit" size="sm" disabled={pending}>

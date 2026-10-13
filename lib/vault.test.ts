@@ -15,6 +15,13 @@ test("expiry and warranty end run from the delivery", () => {
   assert.equal(warrantyEndsAt.toISOString(), "2026-10-15T10:00:00.000Z");
 });
 
+test("a login from stock ends on its own date; its warranty still runs from delivery", () => {
+  const { expiresAt, warrantyEndsAt } = vaultDates("2026-10-01T10:00:00Z", 365, 14, "2027-09-09T19:00:00Z");
+  assert.equal(expiresAt.toISOString(), "2027-09-09T19:00:00.000Z");
+  assert.equal(warrantyEndsAt.toISOString(), "2026-10-15T10:00:00.000Z");
+  assert.throws(() => vaultDates("2026-10-01T10:00:00Z", 365, 14, "soon"));
+});
+
 test("no warranty ends the moment it's delivered", () => {
   const { warrantyEndsAt } = vaultDates("2026-10-01T10:00:00Z", 30, 0);
   assert.equal(warrantyEndsAt.toISOString(), "2026-10-01T10:00:00.000Z");

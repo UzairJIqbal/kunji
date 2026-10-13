@@ -7,8 +7,10 @@ import { storeHintClass, textLinkClass } from "@/components/store/fields";
 import { accountTypeLabel } from "@/lib/catalogue";
 import { formatMobile } from "@/lib/checkout";
 import { getCheckout } from "@/lib/data/checkout";
+import { getPlanInstantUntil } from "@/lib/data/storefront";
 import { formatDays, formatRupees, formatWarranty } from "@/lib/format";
-import { DELIVERY_SENTENCE } from "@/lib/storefront";
+import { stockTimeLeft } from "@/lib/stock";
+import { deliverySentence } from "@/lib/storefront";
 
 export const metadata: Metadata = { title: "Checkout · Kunji" };
 
@@ -28,11 +30,16 @@ async function Checkout({ params }: Pick<PageProps<"/checkout/[planId]">, "param
   const checkout = await getCheckout((await params).planId);
   if (!checkout) notFound();
   const { plan, product, savedWhatsapp } = checkout;
+  const instantUntil = await getPlanInstantUntil(plan.id);
 
   const facts = [
     { term: "You get", detail: accountTypeLabel[product.account_type] },
     { term: "Duration", detail: formatDays(plan.duration_days) },
     { term: "Warranty", detail: formatWarranty(plan.warranty_days) },
+    // From stock, the login has already been running a while.
+    ...(instantUntil
+      ? [{ term: "Time left", detail: stockTimeLeft(new Date(instantUntil), new Date()).replace(/^at/, "At") }]
+      : []),
   ];
 
   return (
@@ -74,7 +81,7 @@ async function Checkout({ params }: Pick<PageProps<"/checkout/[planId]">, "param
             />
             <p className={`mt-4 ${storeHintClass}`}>
               You pay on the next screen, from your wallet or bank. The order waits two
-              hours for payment. {DELIVERY_SENTENCE}
+              hours for payment. {deliverySentence(instantUntil !== null)}
             </p>
           </>
         )}

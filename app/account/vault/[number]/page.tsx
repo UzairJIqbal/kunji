@@ -39,7 +39,12 @@ async function Entry({ params }: Pick<PageProps<"/account/vault/[number]">, "par
   const order = entry.orders;
   // Read after the entry, so it's this request's time, not the build's.
   const now = new Date();
-  const { expiresAt, warrantyEndsAt } = vaultDates(entry.delivered_at, order.duration_days, order.warranty_days);
+  const { expiresAt, warrantyEndsAt } = vaultDates(
+    entry.delivered_at,
+    order.duration_days,
+    order.warranty_days,
+    entry.expires_at,
+  );
   const standing = vaultStanding(expiresAt, now, order.status);
   // The money went back, so the entry stays only as a record. The database
   // refuses the customer's reveal too; the page doesn't offer one.

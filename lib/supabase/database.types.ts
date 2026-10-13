@@ -490,6 +490,7 @@ export type Database = {
           order_id: string
           replaced_at: string
           replacement_id: string
+          stock_item_id: string | null
         }
         Insert: {
           credential: string
@@ -498,6 +499,7 @@ export type Database = {
           order_id: string
           replaced_at?: string
           replacement_id: string
+          stock_item_id?: string | null
         }
         Update: {
           credential?: string
@@ -506,6 +508,7 @@ export type Database = {
           order_id?: string
           replaced_at?: string
           replacement_id?: string
+          stock_item_id?: string | null
         }
         Relationships: [
           {
@@ -520,6 +523,20 @@ export type Database = {
             columns: ["replacement_id"]
             isOneToOne: true
             referencedRelation: "replacements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "replaced_credentials_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_item_states"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "replaced_credentials_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
             referencedColumns: ["id"]
           },
         ]
@@ -655,6 +672,63 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      stock_items: {
+        Row: {
+          added_by: string | null
+          cost: number
+          created_at: string
+          credential: string
+          expires_at: string
+          fingerprint: string
+          id: string
+          order_id: string | null
+          plan_id: string
+          supplier_order_number: string
+          used_at: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          cost: number
+          created_at?: string
+          credential: string
+          expires_at: string
+          fingerprint: string
+          id?: string
+          order_id?: string | null
+          plan_id: string
+          supplier_order_number: string
+          used_at?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          cost?: number
+          created_at?: string
+          credential?: string
+          expires_at?: string
+          fingerprint?: string
+          id?: string
+          order_id?: string | null
+          plan_id?: string
+          supplier_order_number?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       store_settings: {
         Row: {
@@ -821,9 +895,11 @@ export type Database = {
           customer_id: string
           delivered_at: string
           delivered_by: string | null
+          expires_at: string | null
           kind: Database["public"]["Enums"]["credential_kind"]
           order_id: string
           setup_instructions: string
+          stock_item_id: string | null
           warranty_warning: string
         }
         Insert: {
@@ -831,9 +907,11 @@ export type Database = {
           customer_id: string
           delivered_at?: string
           delivered_by?: string | null
+          expires_at?: string | null
           kind: Database["public"]["Enums"]["credential_kind"]
           order_id: string
           setup_instructions: string
+          stock_item_id?: string | null
           warranty_warning: string
         }
         Update: {
@@ -841,9 +919,11 @@ export type Database = {
           customer_id?: string
           delivered_at?: string
           delivered_by?: string | null
+          expires_at?: string | null
           kind?: Database["public"]["Enums"]["credential_kind"]
           order_id?: string
           setup_instructions?: string
+          stock_item_id?: string | null
           warranty_warning?: string
         }
         Relationships: [
@@ -853,6 +933,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "vault_entries_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: true
+            referencedRelation: "stock_item_states"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_entries_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: true
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -967,9 +1061,63 @@ export type Database = {
           },
         ]
       }
+      stock_by_plan: {
+        Row: {
+          delivered: number | null
+          free: number | null
+          held_back: number | null
+          plan_id: string | null
+          soonest_free_expires_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_item_states: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          expires_at: string | null
+          held_back: boolean | null
+          id: string | null
+          order_id: string | null
+          plan_id: string | null
+          supplier_order_number: string | null
+          used_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      approve_payment: { Args: { p_order_id: string }; Returns: undefined }
+      add_stock: {
+        Args: { p_items: Json; p_plan_id: string }
+        Returns: {
+          line: number
+          problem: string
+        }[]
+      }
+      approve_payment: { Args: { p_order_id: string }; Returns: boolean }
       claim_ticket: {
         Args: { p_supplier_reference: string; p_ticket_id: string }
         Returns: undefined
@@ -1000,6 +1148,13 @@ export type Database = {
       hide_review: {
         Args: { p_reason: string; p_review_id: string }
         Returns: undefined
+      }
+      instant_plans: {
+        Args: { p_plan_ids: string[] }
+        Returns: {
+          least_expires_at: string
+          plan_id: string
+        }[]
       }
       leave_review: {
         Args: {
@@ -1074,6 +1229,7 @@ export type Database = {
         Args: { p_order_id: string; p_reason: string }
         Returns: undefined
       }
+      remove_stock_item: { Args: { p_item_id: string }; Returns: undefined }
       replace_by_purchase: {
         Args: {
           p_cost: number
@@ -1141,6 +1297,7 @@ export type Database = {
         Returns: {
           credential: string
           kind: Database["public"]["Enums"]["credential_kind"]
+          sealed_to: string
         }[]
       }
       reveal_replaced_credential: {
@@ -1149,6 +1306,7 @@ export type Database = {
           credential: string
           kind: Database["public"]["Enums"]["credential_kind"]
           order_id: string
+          sealed_to: string
         }[]
       }
       submit_payment_proof: {

@@ -3,7 +3,8 @@
 // a customer can open a ticket on an order whose warranty has ended, or if a
 // review can be written by anyone but a delivered order's own customer or
 // changed by anyone but its author, or if a customer can reach the seller's
-// notification devices or switches.
+// notification devices or switches, or if stock can be read, added or taken
+// by anyone but the seller and approval.
 // Runs from the terminal now and in CI later, so it talks to Postgres
 // directly rather than through the MCP. Nothing it does is kept: the insert
 // attempt runs in a transaction that is always rolled back.
@@ -381,13 +382,145 @@ try {
     throw new RolledBack();
   });
 } catch (error) {
+  if (!(error instanceof RolledBack)) {
+    await sql.end();
+    throw error;
+  }
+}
+
+if (reviewFailures.length > 0) {
+  await sql.end();
+  console.error(`\nFAIL: reviews:\n  ${reviewFailures.join("\n  ")}`);
+  process.exit(1);
+}
+console.log("PASS: only a delivered order's own customer can review it, once, and only they can change it.");
+
+// ───────────────────────────── Stock ─────────────────────────────
+
+// Two items are planted (as the database owner) on the plan of a customer's
+// order waiting for approval: one held back, one fit to sell. A customer reads
+// no stock and can't add any; nobody signed in, the seller included, can
+// select a credential or fingerprint or insert a row; the public learns which
+// plans are instant and nothing else. Then the seller approves with only the
+// held-back item there (nothing taken), and again with the good one: the
+// order goes paid, bought, delivered in that one call, and the vault entry
+// is the item. A customer can't remove stock; the seller removes the unsold
+// item but not the delivered one. No admin or approvable login order fails.
+const stockFailures: string[] = [];
+try {
+  await sql.begin(async (tx) => {
+    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
+    const [order] = await tx<{ id: string; customer_id: string; plan_id: string; duration_days: number }[]>`
+      select o.id, o.customer_id, o.plan_id, o.duration_days from public.orders o
+      where o.status in ('verifying', 'rejected')
+        and o.activation_email is null
+        and not exists (select 1 from public.admins a where a.clerk_user_id = o.customer_id)
+      limit 1
+    `;
+    if (!admin || !order) {
+      stockFailures.push(
+        `could not run: needs an admin and a customer's verifying or rejected order without an activation email (admin ${admin ? "found" : "missing"}, order ${order ? "found" : "missing"})`,
+      );
+      throw new RolledBack();
+    }
+    const plant = (number: string, fingerprintChar: string, days: number) => tx<{ id: string }[]>`
+      insert into public.stock_items (plan_id, credential, fingerprint, supplier_order_number, cost, expires_at)
+      values (${order.plan_id}, ${`v1:${"S".repeat(80)}`}, ${fingerprintChar.repeat(64)}, ${number}, 1,
+              now() + ${days} * interval '1 day')
+      returning id
+    `;
+    const [heldBack] = await plant("CHECKRLS-HELD", "a", order.duration_days * 0.5);
+
+    const signIn = (sub: string) =>
+      tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub, role: "authenticated" })}, true)`;
+    const attempt = async (label: string, expected: string, run: (sp: postgres.TransactionSql) => postgres.PendingQuery<postgres.Row[]>) => {
+      try {
+        await tx.savepoint(run);
+        stockFailures.push(`${label}: ACCEPTED`);
+      } catch (error) {
+        const code = error instanceof postgres.PostgresError ? error.code : "unknown";
+        if (code !== expected) stockFailures.push(`${label}: refused, but not as expected (${code})`);
+      }
+    };
+
+    await tx`set local role anon`;
+    const instant = await tx`select * from public.instant_plans(${[order.plan_id]}::uuid[])`;
+    if (instant.length !== 0) stockFailures.push("a plan with only a held-back item is offered as instant");
+    await tx`reset role`;
+    const [good] = await plant("CHECKRLS-GOOD", "b", order.duration_days * 2);
+    await tx`set local role anon`;
+    const offered = await tx`select * from public.instant_plans(${[order.plan_id]}::uuid[])`;
+    if (offered.length > 1 || (offered[0] && Object.keys(offered[0]).sort().join() !== "least_expires_at,plan_id")) {
+      stockFailures.push(`the public got more than plan and date from instant_plans: ${JSON.stringify(Object.keys(offered[0] ?? {}))}`);
+    }
+    await attempt("the public reading stock", "42501", (sp) => sp`select id from public.stock_items`);
+
+    await tx`set local role authenticated`;
+    await signIn(order.customer_id);
+    const [seen] = await tx<{ n: number }[]>`select count(*)::int as n from public.stock_item_states`;
+    if (seen.n !== 0) stockFailures.push(`a customer read ${seen.n} stock items`);
+    await attempt("a customer adding stock", "42501", (sp) => sp`
+      select * from public.add_stock(${order.plan_id}, '[]'::jsonb)
+    `);
+    await attempt("a customer approving their own payment", "42501", (sp) => sp`select public.approve_payment(${order.id})`);
+    await attempt("a customer removing stock", "42501", (sp) => sp`select public.remove_stock_item(${heldBack.id})`);
+
+    await signIn(admin.id);
+    await attempt("the seller selecting a stock credential", "42501", (sp) => sp`select credential from public.stock_items`);
+    await attempt("the seller selecting a stock fingerprint", "42501", (sp) => sp`select fingerprint from public.stock_items`);
+    await attempt("the seller inserting stock directly", "42501", (sp) => sp`
+      insert into public.stock_items (plan_id, credential, fingerprint, supplier_order_number, cost, expires_at)
+      values (${order.plan_id}, ${`v1:${"T".repeat(80)}`}, ${"c".repeat(64)}, 'CHECKRLS-DIRECT', 1, now() + interval '400 days')
+    `);
+
+    // Only the held-back item: approved, but nothing taken.
+    await tx`reset role`;
+    await tx`update public.stock_items set expires_at = now() + interval '1 hour' where id = ${good.id}`;
+    await tx`set local role authenticated`;
+    await tx.savepoint(async (sp) => {
+      const [{ delivered }] = await sp<{ delivered: boolean }[]>`select public.approve_payment(${order.id}) as delivered`;
+      const [taken] = await sp<{ n: number }[]>`select count(*)::int as n from public.stock_items where order_id is not null and id in (${heldBack.id}, ${good.id})`;
+      if (delivered || taken.n !== 0) stockFailures.push("approval took an item held back for being too close to its end");
+      throw new RolledBack();
+    }).catch((error) => {
+      if (!(error instanceof RolledBack)) throw error;
+    });
+    await tx`reset role`;
+    await tx`update public.stock_items set expires_at = now() + ${order.duration_days * 2} * interval '1 day' where id = ${good.id}`;
+    await tx`set local role authenticated`;
+
+    const [{ delivered }] = await tx<{ delivered: boolean }[]>`select public.approve_payment(${order.id}) as delivered`;
+    // Read back as the owner: which item a vault entry came from isn't granted to anyone.
+    await tx`reset role`;
+    const [after] = await tx<{ status: string }[]>`select status from public.orders where id = ${order.id}`;
+    const moves = await tx<{ to_status: string }[]>`
+      select to_status from public.order_events where order_id = ${order.id} order by id desc limit 3
+    `;
+    const [entry] = await tx<{ stock_item_id: string | null }[]>`select stock_item_id from public.vault_entries where order_id = ${order.id}`;
+    if (!delivered || after.status !== "delivered") stockFailures.push(`approving with stock left the order ${after.status}`);
+    if (moves.map((m) => m.to_status).reverse().join() !== "paid,bought,delivered") {
+      stockFailures.push(`approving with stock recorded ${moves.map((m) => m.to_status).reverse().join(", ")}, not paid, bought, delivered`);
+    }
+    if (entry?.stock_item_id !== good.id) stockFailures.push("the vault entry isn't the stock item that was taken");
+
+    // The seller removes the unsold one; the delivered one stays.
+    await tx`set local role authenticated`;
+    await signIn(admin.id);
+    await attempt("the seller removing a delivered item", "KJ013", (sp) => sp`select public.remove_stock_item(${good.id})`);
+    await tx`select public.remove_stock_item(${heldBack.id})`;
+    await tx`reset role`;
+    const [left] = await tx<{ n: number }[]>`select count(*)::int as n from public.stock_items where id in (${heldBack.id}, ${good.id})`;
+    if (left.n !== 1) stockFailures.push(`removing the unsold item left ${left.n} of the two`);
+    throw new RolledBack();
+  });
+} catch (error) {
   if (!(error instanceof RolledBack)) throw error;
 } finally {
   await sql.end();
 }
 
-if (reviewFailures.length > 0) {
-  console.error(`\nFAIL: reviews:\n  ${reviewFailures.join("\n  ")}`);
+if (stockFailures.length > 0) {
+  console.error(`\nFAIL: stock:\n  ${stockFailures.join("\n  ")}`);
   process.exit(1);
 }
-console.log("PASS: only a delivered order's own customer can review it, once, and only they can change it.");
+console.log("PASS: stock is the seller's alone, credentials unreadable; approval delivers a sellable item in one step and holds back the rest; only unsold items can be removed.");

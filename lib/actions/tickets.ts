@@ -275,8 +275,8 @@ export async function refundTicket(ticketId: string, prev: FormState, formData: 
   return saved("Refund recorded.", prev);
 }
 
-// The database records the reveal, then hands over the ciphertext, which was
-// sealed against the order's id like the credential that replaced it.
+// The database records the reveal, then hands over the ciphertext and the id
+// it was sealed against: the order's, or the stock item's it came from.
 export async function revealReplacedCredential(id: number): Promise<RevealResult> {
   if (!Number.isSafeInteger(id) || id < 1) return { ok: false, message: "This credential doesn't exist." };
 
@@ -286,7 +286,7 @@ export async function revealReplacedCredential(id: number): Promise<RevealResult
   if (error || !data) return { ok: false, message: "This credential couldn't be found." };
 
   try {
-    const plain = decryptCredential(data.order_id, data.credential);
+    const plain = decryptCredential(data.sealed_to, data.credential);
     return { ok: true, credential: parseCredential(plain, data.kind) };
   } catch {
     return { ok: false, message: "This credential couldn't be opened." };

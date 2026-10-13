@@ -69,19 +69,24 @@ const DAY_MS = 86_400_000;
 export const EXPIRING_SOON_DAYS = 7;
 
 // Both run from the delivery in Kunji: the day the customer could first use
-// it, and the day numastore's own warranty starts too.
+// it, and the day numastore's own warranty starts too. A login delivered from
+// stock was bought earlier, so it ends on the day the seller recorded for it,
+// not a full plan from delivery.
 export function vaultDates(
   deliveredAt: string | Date,
   durationDays: number,
   warrantyDays: number,
+  itemExpiresAt: string | null = null,
 ): { expiresAt: Date; warrantyEndsAt: Date } {
   const from = typeof deliveredAt === "string" ? new Date(deliveredAt) : deliveredAt;
   if (Number.isNaN(from.getTime())) throw new Error(`Not a time: ${String(deliveredAt)}`);
   for (const days of [durationDays, warrantyDays]) {
     if (!Number.isInteger(days) || days < 0) throw new Error(`Not a number of days: ${days}`);
   }
+  const itemEnd = itemExpiresAt === null ? null : new Date(itemExpiresAt);
+  if (itemEnd && Number.isNaN(itemEnd.getTime())) throw new Error(`Not a time: ${itemExpiresAt}`);
   return {
-    expiresAt: new Date(from.getTime() + durationDays * DAY_MS),
+    expiresAt: itemEnd ?? new Date(from.getTime() + durationDays * DAY_MS),
     warrantyEndsAt: new Date(from.getTime() + warrantyDays * DAY_MS),
   };
 }

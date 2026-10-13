@@ -1,11 +1,13 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes } from "node:crypto";
 
 // The one place a credential is encrypted or decrypted, and the one place the
 // key is read. Nothing else in the app touches either.
 //
 // AES-256-GCM: authenticated, so a ciphertext that was changed, or moved onto
 // another order, fails to open rather than opening to rubbish. Each order's id
-// is bound in as additional data for exactly that reason.
+// is bound in as additional data for exactly that reason. A login bought ahead
+// into stock is sealed to its stock item's id instead, and keeps that seal
+// when it's delivered, so delivery never needs the plain text.
 //
 // Stored as "v1:" then base64 of IV (12 bytes), tag (16) and ciphertext. The
 // version is there so a later key or format can sit beside this one.
@@ -80,4 +82,22 @@ export function encryptCredential(orderId: string, plain: string): string {
 
 export function decryptCredential(orderId: string, sealed: string): string {
   return openCredential(parseVaultKey(process.env.VAULT_KEY), orderId, sealed);
+}
+
+// A stock login's fingerprint, so a repeat is caught without anything ever
+// comparing plain text. An HMAC under a key derived from the vault key: the
+// database alone can't test a guessed password against it. The login is
+// compared ignoring case and surrounding space, as a sign-in would; the
+// password exactly.
+export function fingerprintCredential(key: Buffer, login: string, password: string): string {
+  const fingerprintKey = Buffer.from(hkdfSync("sha256", key, Buffer.alloc(0), "kunji-stock-fingerprint:v1", KEY_BYTES));
+  return createHmac("sha256", fingerprintKey)
+    .update(login.trim().toLowerCase(), "utf8")
+    .update("\u0000", "utf8")
+    .update(password, "utf8")
+    .digest("hex");
+}
+
+export function credentialFingerprint(login: string, password: string): string {
+  return fingerprintCredential(parseVaultKey(process.env.VAULT_KEY), login, password);
 }

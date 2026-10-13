@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { test } from "node:test";
-import { openCredential, parseVaultKey, sealCredential } from "./vault-crypto.ts";
+import { fingerprintCredential, openCredential, parseVaultKey, sealCredential } from "./vault-crypto.ts";
 
 const key = randomBytes(32);
 const order = "4f0c6d0e-6b8a-4d8f-9a63-0b6f0e1f2a3b";
@@ -66,4 +66,21 @@ test("the key must be 32 bytes of base64, and a refusal never repeats it", () =>
     (error: Error) => /32 bytes/.test(error.message) && !error.message.includes(short),
   );
   assert.throws(() => parseVaultKey("not base64 at all!"), /not base64/);
+});
+
+test("a fingerprint is the same for the same login, whatever its case or spacing", () => {
+  const a = fingerprintCredential(key, "Someone@Example.com ", "hunter2");
+  assert.equal(a, fingerprintCredential(key, "someone@example.com", "hunter2"));
+  assert.match(a, /^[0-9a-f]{64}$/);
+  assert.ok(!a.includes("hunter2"));
+});
+
+test("a fingerprint changes with the password, the key, or where login ends", () => {
+  const a = fingerprintCredential(key, "someone@example.com", "hunter2");
+  assert.notEqual(a, fingerprintCredential(key, "someone@example.com", "Hunter2"));
+  assert.notEqual(a, fingerprintCredential(randomBytes(32), "someone@example.com", "hunter2"));
+  assert.notEqual(
+    fingerprintCredential(key, "ab", "c"),
+    fingerprintCredential(key, "a", "bc"),
+  );
 });

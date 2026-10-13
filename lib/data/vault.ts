@@ -10,7 +10,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 const VAULT_LIST_LIMIT = 50;
 const orderNumberPattern = /^[1-9]\d{0,11}$/;
 
-const entryColumns = `order_id, kind, delivered_at,
+const entryColumns = `order_id, kind, delivered_at, expires_at,
   orders!inner (number, status, product_name, duration_days, warranty_days)`;
 
 export async function listVaultEntries() {

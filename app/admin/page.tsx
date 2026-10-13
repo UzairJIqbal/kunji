@@ -5,7 +5,7 @@ import { ActionButton } from "@/components/admin/action-button";
 import { BoughtForm, WaitingClock } from "@/components/admin/buying-forms";
 import { DeliverForm } from "@/components/admin/deliver-form";
 import { FindOrder } from "@/components/admin/find-order";
-import { ApproveButton, AwaySwitch, RefundForm, RejectForm } from "@/components/admin/verification-forms";
+import { ApproveButton, AwaySwitch, DecisionNotices, RefundForm, RejectForm } from "@/components/admin/verification-forms";
 import { LiveOrders } from "@/components/live-orders";
 import { CopyButton } from "@/components/store/copy-button";
 import { cannotSupply, markBought, refundUnsuppliedOrder } from "@/lib/actions/buying";
@@ -102,17 +102,19 @@ async function Queue() {
     <>
       {/* New proof, and decisions made on another device, re-read this list. */}
       <LiveOrders />
-      {rows.length === 0 ? (
-        <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
-          Nothing to check. New proof shows up here as it arrives.
-        </p>
-      ) : (
-        <ol className="mt-1.5 divide-y rounded-md border">
-          {rows.map((row) => (
-            <QueueItem key={row.id} row={row} />
-          ))}
-        </ol>
-      )}
+      <DecisionNotices>
+        {rows.length === 0 ? (
+          <p className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-muted-foreground">
+            Nothing to check. New proof shows up here as it arrives.
+          </p>
+        ) : (
+          <ol className="mt-1.5 divide-y rounded-md border">
+            {rows.map((row) => (
+              <QueueItem key={row.id} row={row} />
+            ))}
+          </ol>
+        )}
+      </DecisionNotices>
     </>
   );
 }
@@ -148,7 +150,7 @@ function QueueItem({ row }: { row: QueueRow }) {
           <dd>{formatPakistanTime(row.created_at)}</dd>
         </dl>
         <div className="mt-2 flex flex-wrap items-start gap-2">
-          <ApproveButton action={approvePayment.bind(null, order.id)} />
+          <ApproveButton number={order.number} action={approvePayment.bind(null, order.id)} />
           <RejectForm action={rejectPayment.bind(null, order.id)} />
         </div>
       </div>

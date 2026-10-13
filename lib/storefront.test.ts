@@ -4,6 +4,8 @@ import {
   filterCatalogue,
   groupByCategory,
   isNew,
+  deliverySentence,
+  deliveryShort,
   summarisePlans,
   warrantyRange,
   whatsappLink,
@@ -30,6 +32,7 @@ test("the summary gives the lowest price and the range of durations and warranti
     pricesVary: true,
     duration: "30–365 days",
     warranty: "7–30 days",
+    instant: false,
   });
 });
 
@@ -40,7 +43,18 @@ test("one plan reads as one price and one duration, with no 'from'", () => {
     pricesVary: false,
     duration: "30 days",
     warranty: "30 days",
+    instant: false,
   });
+});
+
+test("delivery is instant only when every plan has stock waiting", () => {
+  const stocked = { duration_days: 30, warranty_days: 7, sell_price: 900, instant_until: "2026-11-30T19:00:00Z" };
+  const byHand = { duration_days: 90, warranty_days: 7, sell_price: 2400, instant_until: null };
+  assert.equal(summarisePlans([stocked])?.instant, true);
+  assert.equal(summarisePlans([stocked, byHand])?.instant, false);
+  assert.equal(deliveryShort(true), "Instant delivery, 10am to midnight");
+  assert.match(deliveryShort(false), /30 min/);
+  assert.doesNotMatch(deliverySentence(true), /30 minutes/);
 });
 
 test("a product with no priced plans has no summary", () => {

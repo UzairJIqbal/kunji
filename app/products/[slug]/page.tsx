@@ -9,7 +9,8 @@ import { getProduct, getProductRating, listProductReviews } from "@/lib/data/sto
 import { formatDays, formatPakistanDate, formatRupees, formatWarranty } from "@/lib/format";
 import { productImageUrl } from "@/lib/product-image";
 import { reviewerLabel } from "@/lib/reviews";
-import { DELIVERY_SENTENCE, isNew, summarisePlans } from "@/lib/storefront";
+import { stockTimeLeft } from "@/lib/stock";
+import { deliverySentence, isNew, summarisePlans } from "@/lib/storefront";
 
 // The title is what a shared link shows. No price in it: a preview is cached
 // by whoever unfurls it, and a stale price there would be a false one.
@@ -54,6 +55,7 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
   // Hidden, never listed, or nothing to buy: to a customer these are the same.
   if (!product || !summary) notFound();
   const [rating, reviews] = await Promise.all([getProductRating(product.id), listProductReviews(product.id)]);
+  const now = new Date();
 
   const extra = [
     ...(product.needs_activation_email
@@ -77,7 +79,7 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
           <h1 className="text-2xl font-semibold leading-tight tracking-tight">{product.name}</h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             <Price summary={summary} />
-            <ProductBadges isNew={isNew(new Date(product.created_at), new Date())} soldOut={product.sold_out} />
+            <ProductBadges isNew={isNew(new Date(product.created_at), now)} soldOut={product.sold_out} />
           </div>
           <a href="#reviews-heading" className="inline-flex min-h-11 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             <RatingSummary rating={rating} />
@@ -87,7 +89,7 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
 
       <div className="mt-4 rounded-lg border bg-card p-3">
         <HonestFacts accountType={product.account_type} summary={summary} extra={extra} />
-        <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">{DELIVERY_SENTENCE}</p>
+        <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">{deliverySentence(summary.instant)}</p>
       </div>
 
       {product.description.trim() && (
@@ -114,6 +116,13 @@ async function Product({ params }: Pick<PageProps<"/products/[slug]">, "params">
                 <span className="block text-sm text-muted-foreground">
                   {formatWarranty(plan.warranty_days)}
                 </span>
+                {/* A stocked login was bought earlier, so the customer is told
+                    before buying that it has less than the full plan left. */}
+                {plan.instant_until && (
+                  <span className="block text-sm">
+                    Instant delivery, {stockTimeLeft(new Date(plan.instant_until), now)}
+                  </span>
+                )}
               </span>
               <span className="text-lg font-semibold tabular-nums">
                 {formatRupees(plan.sell_price)}
