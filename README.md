@@ -1,46 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kunji
 
-## The vault key
+A store for digital subscriptions priced in Pakistani rupees, paid from a mobile wallet, with every login delivered to the customer's own encrypted vault.
 
-Credentials in customers' vaults are encrypted with `VAULT_KEY`, and the app won't start without it. Make one with:
+**Live demo:** _coming soon_
+
+<!-- Screenshots, added after deploy
+| Home | Product page on a phone | Vault | Admin queue |
+| --- | --- | --- | --- |
+| ![Home page](docs/screenshots/home.png) | ![Product page on a phone](docs/screenshots/product-phone.png) | ![Customer vault](docs/screenshots/vault.png) | ![Admin verification queue](docs/screenshots/admin-queue.png) |
+-->
+
+## What it does
+
+- Customers browse the catalogue without signing in. Every listing shows what you get, the duration, the warranty and how delivery works.
+- Checkout takes Easypaisa, JazzCash, NayaPay, SadaPay or a bank transfer. The customer enters the transaction ID and uploads the receipt.
+- The seller checks the payment in an admin queue and approves or rejects it, then buys the item from the supplier by hand.
+- The seller pastes the login into the customer's vault. The order page updates live, with no refresh.
+- Warranty tickets for replacements or refunds, reviews from customers whose order was delivered, and seller reports on sales, margin and wait times.
+- The seller is notified of new payments by Web Push and email.
+
+## Stack
+
+Next.js 16 (App Router), React 19, TypeScript strict, Tailwind v4 and shadcn/ui. Clerk for sign-in. Supabase for Postgres, row-level security, Storage and Realtime, trusting Clerk's session token through Supabase's Clerk integration. Node's built-in crypto for the vault. Zod at every boundary. Web Push and Resend for seller notifications. pnpm.
+
+## Security
+
+- **Row-level security decides who sees what.** Every table has it switched on, and policies, not application code, decide which rows a user may read or write. Admin power is a row in the `admins` table, read by those policies. The app never uses Supabase's service key. `pnpm check:rls` fails if any table has row-level security off or if a customer can do something only the seller should.
+- **Credentials are encrypted before they reach the database.** One module encrypts and decrypts vault entries with AES-256-GCM under `VAULT_KEY`. A login is never stored, logged or sent in plain text, and only the order's customer and the seller can open it.
+- **The seller always approves payments.** Uploading a receipt only moves an order to "verifying". It becomes paid only when the seller approves it. Order status changes happen only in database functions that know which moves are allowed and record each one.
+- Supplier prices, margins and supplier order details are admin-only, enforced by policy.
+
+## Run it locally
+
+You need Node 20+, pnpm, a Supabase project and a Clerk application (both free plans work).
+
+1. Install: `pnpm install`
+2. Copy `.env.example` to `.env.local` and fill in every value. Each one has a comment saying where it comes from. Make the vault key with `openssl rand -base64 32` and keep a copy in a password manager: if it's lost, nothing can decrypt the vault.
+3. Connect Clerk to Supabase: turn on the Supabase integration in the Clerk dashboard, then add Clerk as a third-party auth provider in the Supabase dashboard (Authentication → Sign In / Providers → Third-party auth).
+4. Apply the migrations in `supabase/migrations/` in order, e.g. with the Supabase CLI: `supabase link` then `supabase db push`.
+5. Sign in to the app once, then make yourself the seller by adding your Clerk user ID to the `admins` table.
+6. Start it: `pnpm dev`, then open http://localhost:3000.
+
+Checks:
 
 ```bash
-openssl rand -base64 32
+pnpm exec tsc --noEmit   # types
+pnpm lint
+pnpm test                # money, dates, status and crypto
+pnpm build
+pnpm check:rls           # row-level security, needs DATABASE_URL
 ```
-
-Put it in `.env.local` as `VAULT_KEY=…` and **keep a copy in a password manager**. If the key is lost, every vault entry is lost with it: nothing can decrypt them, and each one would have to be delivered again. Never commit it, and use the same key everywhere the app runs against the same database.
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

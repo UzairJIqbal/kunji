@@ -43,3 +43,9 @@ next-env.d.ts
 
 # per-machine agent settings
 .claude/settings.local.json
+
+# Supabase CLI cache
+supabase/.temp/
+
+# paid design template, reference only, never published
+design/
