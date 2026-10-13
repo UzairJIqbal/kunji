@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/store/site-footer";
 import { SupabaseConsole } from "@/components/supabase-console";
 import { themeScript } from "@/components/theme-control";
 import { getStoreSettings } from "@/lib/data/verification";
+import { siteUrl } from "@/lib/env";
 import "./globals.css";
 
 // The design's two faces: a serif for headings, a clean sans for everything
@@ -31,9 +32,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const description =
+  "Digital subscriptions in rupees. Pay from your mobile wallet and your login arrives in a private vault only you can open.";
+
+// metadataBase turns the Open Graph image into an absolute URL, which WhatsApp
+// and Instagram need to fetch it. Pages set their own full titles.
 export const metadata: Metadata = {
-  title: "Kunji",
-  description: "Digital subscriptions in Pakistani rupees",
+  metadataBase: new URL(siteUrl()),
+  title: "Kunji: digital subscriptions in rupees",
+  description,
+  openGraph: { type: "website", siteName: "Kunji", locale: "en_PK", description },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

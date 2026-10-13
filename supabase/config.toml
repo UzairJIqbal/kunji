@@ -1,0 +1,12 @@
+# Only for the throwaway database CI builds from the migrations. Production is
+# the hosted project, changed by the same migration files and nothing else.
+project_id = "kunji"
+
+[db]
+port = 54322
+major_version = 17
+
+# seed.sql names real Clerk accounts from development; CI's database stays empty
+# and pnpm check:rls makes its own rows.
+[db.seed]
+enabled = false

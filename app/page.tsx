@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { z } from "zod";
 import { ProductCard } from "@/components/store/product-card";
-import { listCatalogue } from "@/lib/data/storefront";
+import { paymentMethodLabel } from "@/lib/catalogue";
+import { listAcceptedPaymentMethods, listCatalogue } from "@/lib/data/storefront";
 import {
   filterCatalogue,
   groupByCategory,
@@ -23,23 +24,46 @@ const browseSchema = z.object({
 
 export default function StorePage({ searchParams }: PageProps<"/">) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pt-10 pb-6 sm:pt-16">
-      <h1 className="heading-display">Subscriptions, paid in rupees</h1>
-      <p className="mt-3 max-w-prose text-muted-foreground">
-        Pay from your mobile wallet. Your login arrives in a private vault that only you can
-        open.{" "}
-        <Link
-          href="/how-it-works"
-          className="text-link"
-        >
-          How it works
-        </Link>
-      </p>
+    <main className="mx-auto w-full max-w-5xl px-4 pt-8 pb-6 sm:pt-14">
+      {/* One sentence, the ways to pay, then the products: on a 360px phone the
+          first card starts in the first screen, with no picture in its way. */}
+      <h1 className="heading-title max-w-2xl">
+        Kunji sells digital subscriptions in rupees: pay from your mobile wallet and your login
+        arrives in a private vault only you can open.
+      </h1>
+      <Suspense fallback={<p className="mt-3 min-h-6 text-sm text-muted-foreground">Pay with your mobile wallet</p>}>
+        <PaymentMethods />
+      </Suspense>
 
       <Suspense fallback={<p className="mt-10 text-sm text-muted-foreground">Loading products…</p>}>
         <Catalogue searchParams={searchParams} />
       </Suspense>
     </main>
+  );
+}
+
+// Named from the seller's active accounts, so the row never lists a method
+// nobody can actually pay into.
+async function PaymentMethods() {
+  const methods = await listAcceptedPaymentMethods();
+  return (
+    <div className="mt-3 flex min-h-6 flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
+      {methods.length > 0 && (
+        <>
+          <span className="text-muted-foreground">Pay with</span>
+          <ul aria-label="Payment methods" className="flex flex-wrap gap-x-4 gap-y-1">
+            {methods.map((method) => (
+              <li key={method} className="font-medium">
+                {paymentMethodLabel[method]}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <Link href="/how-it-works" className="text-link">
+        How it works
+      </Link>
+    </div>
   );
 }
 

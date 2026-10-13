@@ -5,7 +5,7 @@
 // changed by anyone but its author, or if a customer can reach the seller's
 // notification devices or switches, or if stock can be read, added or taken
 // by anyone but the seller and approval.
-// Runs from the terminal now and in CI later, so it talks to Postgres
+// Runs from the terminal and in CI, so it talks to Postgres
 // directly rather than through the MCP. Nothing it does is kept: the insert
 // attempt runs in a transaction that is always rolled back.
 import postgres from "postgres";
@@ -56,25 +56,86 @@ if (missing.length > 0) {
 }
 console.log(`\nPASS: all ${rows.length} tables have row-level security on.`);
 
+// ───────────────────────────── Fixtures ─────────────────────────────
+
+// Every check below makes its own seller, customer and orders inside its
+// rolled-back transaction, so it runs the same on an empty database in CI as on
+// production with its test orders cleared out, and never depends on, or leaves
+// behind, a real row. Orders reach their states through the same functions
+// the app calls, signed in as the customer and then the seller, so a fixture
+// can't be in a state the app could never produce. A step that fails throws,
+// and the check fails with it.
+type Order = { id: string; customer_id: string; plan_id: string; duration_days: number };
+type Fixtures = { admin: { id: string }; verifying: Order; paid: Order; delivered: Order };
+
+const fixtureIds = { admin: "user_checkrlsadmin", customer: "user_checkrlscustomer" };
+
+async function makeFixtures(tx: postgres.TransactionSql): Promise<Fixtures> {
+  await tx`insert into public.admins (clerk_user_id) values (${fixtureIds.admin})`;
+  const [product] = await tx<{ id: string }[]>`
+    insert into public.products (slug, name, active, category, account_type)
+    values ('check-rls-fixture', 'check:rls fixture', true, 'check:rls', 'own_account')
+    returning id
+  `;
+  const [plan] = await tx<{ id: string }[]>`
+    select public.create_plan(${product.id}, 30, 7, 1000, 20, 'https://example.com/check-rls') as id
+  `;
+  const [account] = await tx<{ id: string }[]>`
+    insert into public.payment_accounts (method, account_title, account_number)
+    values ('easypaisa', 'check:rls fixture', '03000000000')
+    returning id
+  `;
+
+  // The proof policy wants the receipt already in Storage; a row is enough.
+  const receipts = [1, 2, 3].map(() => `${fixtureIds.customer}/${crypto.randomUUID()}.png`);
+  for (const name of receipts) {
+    await tx`insert into storage.objects (bucket_id, name) values ('receipts', ${name})`;
+  }
+
+  await tx`set local role authenticated`;
+  const signIn = (sub: string) =>
+    tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub, role: "authenticated" })}, true)`;
+
+  await signIn(fixtureIds.customer);
+  const place = async (n: number): Promise<Order> => {
+    const [{ number }] = await tx<{ number: string }[]>`
+      select public.place_order(${plan.id}, null, '923000000000') as number
+    `;
+    const [order] = await tx<Order[]>`
+      select id, customer_id, plan_id, duration_days from public.orders where number = ${number}
+    `;
+    await tx`
+      select public.submit_payment_proof(${order.id}, ${account.id}, ${`CHECKRLS-TX-${n}`}, '03000000000',
+        ${receipts[n - 1]})
+    `;
+    return order;
+  };
+  const verifying = await place(1);
+  const paid = await place(2);
+  const delivered = await place(3);
+
+  await signIn(fixtureIds.admin);
+  await tx`select public.approve_payment(${paid.id})`;
+  await tx`select public.approve_payment(${delivered.id})`;
+  await tx`select public.mark_order_bought(${delivered.id}, 'CHECKRLS-BOUGHT', 1000)`;
+  await tx`select public.deliver_order(${delivered.id}, 'login', ${`v1:${"D".repeat(60)}`})`;
+
+  await tx`reset role`;
+  await tx`select set_config('request.jwt.claims', '', true)`;
+  return { admin: { id: fixtureIds.admin }, verifying, paid, delivered };
+}
+
 // ───────────────────────────── Vault entries ─────────────────────────────
 
 // A vault entry is made only by deliver_order, which checks the order is at
 // bought. So even the seller, signed in, inserting straight into the table for
 // a paid order must be refused for want of permission. Any other outcome
-// fails, including having no admin or paid order to try it with: a check that
-// can't run doesn't pass.
+// fails: a check that can't run doesn't pass.
 class RolledBack extends Error {}
 let outcome = "did not run";
 try {
   await sql.begin(async (tx) => {
-    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
-    const [order] = await tx<{ id: string; customer_id: string }[]>`
-      select id, customer_id from public.orders where status = 'paid' limit 1
-    `;
-    if (!admin || !order) {
-      outcome = `could not run: needs an admin and a paid order (admin ${admin ? "found" : "missing"}, paid order ${order ? "found" : "missing"})`;
-      throw new RolledBack();
-    }
+    const { admin, paid: order } = await makeFixtures(tx);
 
     await tx`set local role authenticated`;
     await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: admin.id, role: "authenticated" })}, true)`;
@@ -113,22 +174,11 @@ console.log("PASS: a direct vault insert on a paid order is refused; only delive
 // The warranty end is the database's to check. A delivered order's delivery
 // is moved back past its warranty, inside the rolled-back transaction, and its
 // own customer, signed in, inserts a ticket straight into the table. Anything
-// but the warranty refusal (KJ009) fails, including there being no delivered
-// order with a warranty to try it on.
+// but the warranty refusal (KJ009) fails.
 let ticketOutcome = "did not run";
 try {
   await sql.begin(async (tx) => {
-    const [order] = await tx<{ id: string; customer_id: string }[]>`
-      select o.id, o.customer_id
-      from public.orders o
-      join public.vault_entries v on v.order_id = o.id
-      where o.status in ('delivered', 'replaced') and o.warranty_days > 0
-      limit 1
-    `;
-    if (!order) {
-      ticketOutcome = "could not run: needs a delivered order with a warranty";
-      throw new RolledBack();
-    }
+    const { delivered: order } = await makeFixtures(tx);
     await tx`
       update public.vault_entries v
       set delivered_at = now() - make_interval(days => o.warranty_days) - interval '1 minute'
@@ -171,22 +221,12 @@ console.log("PASS: a ticket on an order past its warranty is refused by the data
 // A customer calling each report function directly is refused for permission,
 // and reads no planned margin. The seller, the same way, gets rows from each
 // that has any, so the refusal is about who's asking, not a function that
-// refuses everyone. No customer or admin to try it with fails.
+// refuses everyone.
 const reportFailures: string[] = [];
 try {
   await sql.begin(async (tx) => {
-    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
-    const [customer] = await tx<{ id: string }[]>`
-      select o.customer_id as id from public.orders o
-      where not exists (select 1 from public.admins a where a.clerk_user_id = o.customer_id)
-      limit 1
-    `;
-    if (!admin || !customer) {
-      reportFailures.push(
-        `could not run: needs an admin and a customer with an order (admin ${admin ? "found" : "missing"}, customer ${customer ? "found" : "missing"})`,
-      );
-      throw new RolledBack();
-    }
+    const { admin, verifying } = await makeFixtures(tx);
+    const customer = { id: verifying.customer_id };
 
     await tx`set local role authenticated`;
     const signIn = (sub: string) =>
@@ -235,23 +275,11 @@ console.log("PASS: a customer calling a report directly is refused; the seller s
 // narrow door, they get nothing for another customer's order, and for their
 // own verifying order only the switches and ciphertext. Dropping a device
 // needs its tag, which the door never hands out, so a guessed tag removes
-// nothing. The seller reads both tables. No admin or verifying order fails.
+// nothing. The seller reads both tables.
 const alertFailures: string[] = [];
 try {
   await sql.begin(async (tx) => {
-    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
-    const [verifying] = await tx<{ id: string; customer_id: string }[]>`
-      select o.id, o.customer_id from public.orders o
-      where o.status = 'verifying'
-        and not exists (select 1 from public.admins a where a.clerk_user_id = o.customer_id)
-      limit 1
-    `;
-    if (!admin || !verifying) {
-      alertFailures.push(
-        `could not run: needs an admin and a customer's verifying order (admin ${admin ? "found" : "missing"}, verifying ${verifying ? "found" : "missing"})`,
-      );
-      throw new RolledBack();
-    }
+    const { admin, verifying } = await makeFixtures(tx);
     const tag = "a".repeat(64);
     await tx`
       insert into public.push_subscriptions (subscription, endpoint_tag, label, created_by)
@@ -317,29 +345,11 @@ console.log("PASS: the seller's devices and switches are admin-only; a customer 
 // SQL with no signed-in user is refused, a verifying order's own customer is
 // refused, a delivered order's customer gets one review and no second, and the
 // seller (as the database owner, so no policy or grant is in the way, only the
-// trigger) can't change its stars. Each attempt must end exactly as expected;
-// missing an order to try it on fails too.
+// trigger) can't change its stars. Each attempt must end exactly as expected.
 const reviewFailures: string[] = [];
 try {
   await sql.begin(async (tx) => {
-    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
-    const [verifying] = await tx<{ id: string; customer_id: string }[]>`
-      select id, customer_id from public.orders where status = 'verifying' limit 1
-    `;
-    const [delivered] = await tx<{ id: string; customer_id: string }[]>`
-      select o.id, o.customer_id
-      from public.orders o
-      join public.vault_entries v on v.order_id = o.id
-      where o.status in ('delivered', 'replaced')
-        and not exists (select 1 from public.reviews r where r.order_id = o.id)
-      limit 1
-    `;
-    if (!admin || !verifying || !delivered) {
-      reviewFailures.push(
-        `could not run: needs an admin, a verifying order and an unreviewed delivered order (admin ${admin ? "found" : "missing"}, verifying ${verifying ? "found" : "missing"}, delivered ${delivered ? "found" : "missing"})`,
-      );
-      throw new RolledBack();
-    }
+    const { admin, verifying, delivered } = await makeFixtures(tx);
 
     const signIn = (sub: string) =>
       tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub, role: "authenticated" })}, true)`;
@@ -405,24 +415,11 @@ console.log("PASS: only a delivered order's own customer can review it, once, an
 // held-back item there (nothing taken), and again with the good one: the
 // order goes paid, bought, delivered in that one call, and the vault entry
 // is the item. A customer can't remove stock; the seller removes the unsold
-// item but not the delivered one. No admin or approvable login order fails.
+// item but not the delivered one.
 const stockFailures: string[] = [];
 try {
   await sql.begin(async (tx) => {
-    const [admin] = await tx<{ id: string }[]>`select clerk_user_id as id from public.admins limit 1`;
-    const [order] = await tx<{ id: string; customer_id: string; plan_id: string; duration_days: number }[]>`
-      select o.id, o.customer_id, o.plan_id, o.duration_days from public.orders o
-      where o.status in ('verifying', 'rejected')
-        and o.activation_email is null
-        and not exists (select 1 from public.admins a where a.clerk_user_id = o.customer_id)
-      limit 1
-    `;
-    if (!admin || !order) {
-      stockFailures.push(
-        `could not run: needs an admin and a customer's verifying or rejected order without an activation email (admin ${admin ? "found" : "missing"}, order ${order ? "found" : "missing"})`,
-      );
-      throw new RolledBack();
-    }
+    const { admin, verifying: order } = await makeFixtures(tx);
     const plant = (number: string, fingerprintChar: string, days: number) => tx<{ id: string }[]>`
       insert into public.stock_items (plan_id, credential, fingerprint, supplier_order_number, cost, expires_at)
       values (${order.plan_id}, ${`v1:${"S".repeat(80)}`}, ${fingerprintChar.repeat(64)}, ${number}, 1,

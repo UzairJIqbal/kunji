@@ -1,5 +1,8 @@
 import { SignIn } from "@clerk/nextjs";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = { title: "Sign in · Kunji" };
 
 // withSignUp: a first-time visitor gets an account from this same screen,
 // whichever method they use, without being sent to a separate sign-up page.
