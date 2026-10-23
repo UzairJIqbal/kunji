@@ -4,12 +4,6 @@ A store for digital subscriptions priced in Pakistani rupees, paid from a mobile
 
 **Live:** https://kunji-two.vercel.app
 
-| Storefront | Vault |
-| --- | --- |
-| ![The storefront on a phone](docs/screenshots/storefront.png) | ![A delivered login in the customer's vault](docs/screenshots/vault.png) |
-| **Verification queue** | **Buy list** |
-| ![The seller's payment verification queue](docs/screenshots/queue.png) | ![The seller's buy list](docs/screenshots/buy-list.png) |
-
 ## What makes it different
 
 - **Honest listings.** Every product says what you actually get: the duration, the warranty, whether it's your own account or a shared one, and how it's delivered. No fake reviews, stock counts or countdowns. If the seller didn't write it, the store doesn't show it.
