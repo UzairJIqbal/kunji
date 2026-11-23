@@ -157,3 +157,17 @@ export async function listAcceptedPaymentMethods(): Promise<PaymentMethod[]> {
   const taken = new Set(data.map((row) => row.method));
   return paymentMethods.filter((method) => taken.has(method));
 }
+
+// Only the address of each listed product, for the sitemap. The same plans
+// join as the catalogue, so a product with nothing to buy isn't listed.
+export async function listProductSlugs(): Promise<string[]> {
+  await connection();
+  const supabase = createPublicSupabase();
+  const { data, error } = await supabase
+    .from("products")
+    .select("slug, plans!inner (id)")
+    .limit(CATALOGUE_LIMIT)
+    .limit(1, { referencedTable: "plans" });
+  if (error) throw new Error(`Couldn't load product addresses: ${error.message}`);
+  return data.map((product) => product.slug);
+}

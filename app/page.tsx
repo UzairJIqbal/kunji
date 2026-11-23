@@ -2,6 +2,8 @@ import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
 import { z } from "zod";
+import { JsonLd } from "@/components/json-ld";
+import { HowItWorksSteps } from "@/components/store/how-it-works-steps";
 import { ProductCard } from "@/components/store/product-card";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { listAcceptedPaymentMethods, listCatalogue } from "@/lib/data/storefront";
@@ -9,6 +11,7 @@ import {
   filterCatalogue,
   groupByCategory,
   isNew,
+  storeQuestions,
   summarisePlans,
   type CatalogueFilter,
 } from "@/lib/storefront";
@@ -38,6 +41,27 @@ export default function StorePage({ searchParams }: PageProps<"/">) {
       <Suspense fallback={<p className="mt-10 text-sm text-muted-foreground">Loading products…</p>}>
         <Catalogue searchParams={searchParams} />
       </Suspense>
+
+      {/* Below the products, so a buyer reaches them first; here for anyone,
+          person or crawler, still working out what Kunji is. */}
+      <section aria-labelledby="how-kunji-works" className="mt-14 max-w-3xl">
+        <h2 id="how-kunji-works" className="heading-title">
+          How Kunji works
+        </h2>
+        <HowItWorksSteps stepHeading="h3" />
+      </section>
+
+      <section aria-labelledby="questions" className="mt-12 max-w-prose">
+        <h2 id="questions" className="heading-title">
+          Questions
+        </h2>
+        <Suspense fallback={<p className="mt-3 text-sm text-muted-foreground">Loading…</p>}>
+          <Questions />
+        </Suspense>
+        <Link href="/warranty" className="text-link mt-3 inline-flex min-h-11 items-center">
+          Warranty and refunds
+        </Link>
+      </section>
     </main>
   );
 }
@@ -64,6 +88,35 @@ async function PaymentMethods() {
         How it works
       </Link>
     </div>
+  );
+}
+
+// The visible answers and the FAQPage data come from one list, word for word.
+async function Questions() {
+  const methods = await listAcceptedPaymentMethods();
+  const questions = storeQuestions(methods.map((method) => paymentMethodLabel[method]));
+  return (
+    <>
+      <dl className="mt-3 grid gap-4">
+        {questions.map(({ question, answer }) => (
+          <div key={question}>
+            <dt className="font-medium">{question}</dt>
+            <dd className="mt-0.5 text-muted-foreground">{answer}</dd>
+          </div>
+        ))}
+      </dl>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: questions.map(({ question, answer }) => ({
+            "@type": "Question",
+            name: question,
+            acceptedAnswer: { "@type": "Answer", text: answer },
+          })),
+        }}
+      />
+    </>
   );
 }
 

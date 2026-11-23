@@ -6,6 +6,7 @@ import {
   isNew,
   deliverySentence,
   deliveryShort,
+  storeQuestions,
   summarisePlans,
   warrantyRange,
   whatsappLink,
@@ -114,4 +115,12 @@ test("a WhatsApp link can carry a message, encoded for the URL", () => {
     whatsappLink("923001234567", "Order #1007: paid?"),
     "https://wa.me/923001234567?text=Order%20%231007%3A%20paid%3F",
   );
+});
+
+test("the payment answer names only the methods open right now", () => {
+  const [pay] = storeQuestions(["Easypaisa", "JazzCash", "Bank transfer"]);
+  assert.match(pay.answer, /pay with Easypaisa, JazzCash or Bank transfer\./);
+  const [closed] = storeQuestions([]);
+  assert.match(closed.answer, /No payment methods are open right now/);
+  assert.doesNotMatch(closed.answer, /pay with/);
 });

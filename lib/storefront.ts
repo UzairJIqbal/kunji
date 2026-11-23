@@ -122,3 +122,61 @@ export function whatsappLink(number: string, text?: string): string {
   const link = `https://wa.me/${number}`;
   return text ? `${link}?text=${encodeURIComponent(text)}` : link;
 }
+
+// ───────────────────────── How it works, and questions ─────────────────────────
+
+// A real sequence, so it's numbered. Every step here is something the store
+// actually does; nothing is promised that the order page can't show. Shown on
+// the home page and on /how-it-works, so the two never drift apart.
+export const HOW_IT_WORKS_STEPS = [
+  {
+    title: "Choose a plan",
+    body: "Every product page says exactly what you get: your own account, a shared slot, or an invite to your email, with its duration and warranty.",
+  },
+  {
+    title: "Pay from your wallet",
+    body: "Send the exact amount to the account shown at checkout. Then enter the transaction ID and the number you paid from, and upload the receipt.",
+  },
+  {
+    title: "We check your payment",
+    body: "A person checks the money has arrived before your order counts as paid. A screenshot alone never does it. Your order page shows where it's up to.",
+  },
+  {
+    title: "Open your vault",
+    body: `${DELIVERY_SENTENCE} Your login is kept there, encrypted, with setup instructions and the date it runs out.`,
+  },
+] as const;
+
+export type Question = { question: string; answer: string };
+
+// The home page's questions, built once so the visible answers and the
+// FAQPage structured data are the same words. Payment methods are passed in
+// from the seller's active accounts, so the answer never names one nobody can
+// pay into.
+export function storeQuestions(methodLabels: readonly string[]): Question[] {
+  const methods =
+    methodLabels.length > 0
+      ? `Right now you can pay with ${new Intl.ListFormat("en-GB", { type: "disjunction" }).format(methodLabels)}.`
+      : "No payment methods are open right now, so message us on WhatsApp before you order.";
+  return [
+    {
+      question: "How do I pay?",
+      answer: `In rupees, from your mobile wallet or bank account. ${methods} Send the exact amount to the account shown at checkout, then enter the transaction ID and upload the receipt.`,
+    },
+    {
+      question: "How long does delivery take?",
+      answer:
+        "Usually within 30 minutes, between 10am and midnight, once a person has checked your payment. Some plans have a login already waiting and arrive the moment your payment is approved; their product page says so.",
+    },
+    {
+      question: "What is the vault?",
+      answer:
+        "A private page in your Kunji account where your login is kept, encrypted, with its setup instructions and the date it runs out. Only you can open it, after signing in.",
+    },
+    {
+      question: "Can I get a refund?",
+      answer:
+        "If we can't supply what you paid for, you get all of it back, and if you sent the wrong amount we send it back. If something stops working during its warranty and can't be replaced, we refund the part you haven't used. Refunds go to the wallet number you paid from.",
+    },
+  ];
+}

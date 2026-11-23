@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { HowItWorksSteps } from "@/components/store/how-it-works-steps";
 import { paymentMethodLabel } from "@/lib/catalogue";
 import { listAcceptedPaymentMethods } from "@/lib/data/storefront";
-import { DELIVERY_SENTENCE } from "@/lib/storefront";
 
 export const metadata: Metadata = {
   title: "How it works · Kunji",
@@ -13,48 +13,12 @@ export const metadata: Metadata = {
 const link =
   "text-link";
 
-// A real sequence, so it's numbered. Every step here is something the store
-// actually does; nothing is promised that the order page can't show.
-const steps = [
-  {
-    title: "Choose a plan",
-    body: "Every product page says exactly what you get: your own account, a shared slot, or an invite to your email, with its duration and warranty.",
-  },
-  {
-    title: "Pay from your wallet",
-    body: "Send the exact amount to the account shown at checkout. Then enter the transaction ID and the number you paid from, and upload the receipt.",
-  },
-  {
-    title: "We check your payment",
-    body: "A person checks the money has arrived before your order counts as paid. A screenshot alone never does it. Your order page shows where it's up to.",
-  },
-  {
-    title: "Open your vault",
-    body: `${DELIVERY_SENTENCE} Your login is kept there, encrypted, with setup instructions and the date it runs out.`,
-  },
-];
-
 export default function HowItWorksPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <h1 className="heading-title">How it works</h1>
 
-      <ol className="mt-5 grid gap-4">
-        {steps.map((step, i) => (
-          <li key={step.title} className="flex gap-3">
-            <span
-              aria-hidden
-              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-card text-sm font-semibold tabular-nums"
-            >
-              {i + 1}
-            </span>
-            <div className="max-w-prose">
-              <h2 className="font-heading text-lg">{step.title}</h2>
-              <p className="mt-0.5 text-muted-foreground">{step.body}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <HowItWorksSteps stepHeading="h2" />
 
       <section aria-labelledby="methods" className="mt-8">
         <h2 id="methods" className="heading-section">

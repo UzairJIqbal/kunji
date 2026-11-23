@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Figtree, Geist_Mono, Newsreader } from "next/font/google";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { JsonLd } from "@/components/json-ld";
 import { SiteHeader } from "@/components/site-header";
 import { AwayBanner } from "@/components/store/away-banner";
 import { SiteFooter } from "@/components/store/site-footer";
@@ -45,6 +46,32 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
+// Who runs the site and what it is, for crawlers that read structured data.
+// The search action is real: the home page filters by ?q=.
+function siteJsonLd() {
+  const url = siteUrl().replace(/\/$/, "");
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", "@id": `${url}/#organization`, name: "Kunji", url, description },
+      {
+        "@type": "WebSite",
+        "@id": `${url}/#website`,
+        name: "Kunji",
+        url,
+        description,
+        inLanguage: "en-PK",
+        publisher: { "@id": `${url}/#organization` },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${url}/?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
+      },
+    ],
+  };
+}
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // The inline script sets data-theme before React hydrates, hence the warning opt-out.
@@ -57,6 +84,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col">
+        <JsonLd data={siteJsonLd()} />
         <ClerkProvider>
           <SiteHeader />
           <Suspense fallback={null}>

@@ -1,0 +1,25 @@
+# Kunji
+
+> Kunji is an online store in Pakistan that sells digital subscriptions priced in Pakistani rupees (PKR). You pay from a Pakistani mobile wallet or by bank transfer, a person checks the payment, and your login is delivered to a private, encrypted vault in your Kunji account that only you can open.
+
+Kunji is for people in Pakistan who want a digital subscription but would rather pay in rupees from their mobile wallet than with an international card. Every product page says exactly what you get: your own account, a shared slot, or an invite to your email, with its duration, warranty and price in rupees.
+
+Checkout supports Easypaisa, JazzCash, NayaPay, SadaPay and bank transfer. Which of them are open at any moment is listed on the home page and at checkout.
+
+## How buying works
+
+1. Choose a plan. The product page shows the account type, duration, warranty and price.
+2. Pay from your wallet. Send the exact amount to the account shown at checkout, then enter the transaction ID and the number you paid from, and upload the receipt.
+3. A person checks your payment. An order counts as paid only once the seller has confirmed the money arrived; a screenshot alone never does it. The order page shows where it's up to.
+4. Open your vault. The login is delivered by hand, usually within 30 minutes, between 10am and midnight Pakistan time. Some plans have a login already waiting and arrive the moment the payment is approved.
+
+## Warranty and refunds
+
+If what you bought stops working while its warranty lasts, Kunji replaces it, or refunds the part you haven't used if it can't. If Kunji can't supply what you paid for, you get all of it back. Refunds go to the wallet number you paid from. Kunji never asks for a PIN or a code to send a refund.
+
+## Pages
+
+- [Store and catalogue](https://kunji-two.vercel.app/): every product on sale, with prices in rupees
+- [How it works](https://kunji-two.vercel.app/how-it-works): the four steps from choosing a plan to opening your vault
+- [Warranty and refunds](https://kunji-two.vercel.app/warranty): what the warranty covers, for how long, and how refunds are paid
+- [Sitemap](https://kunji-two.vercel.app/sitemap.xml): every public page, including each product
